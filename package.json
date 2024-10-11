@@ -1,0 +1,14 @@
+{
+  "name": "cabinet_dentaire_backend",
+  "version": "1.0.0",
+  "description": "Backend for the 'cabinet dentaire' app",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon index.js"
+  },
+  "author": "hadarisas@gmail.com",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.21.1"
+  }
+}
