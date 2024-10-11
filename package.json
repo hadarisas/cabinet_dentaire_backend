@@ -4,13 +4,17 @@
   "description": "Backend for the 'cabinet dentaire' app",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "seed": "node prisma/seed.js"
   },
   "author": "hadarisas@gmail.com",
   "license": "ISC",
   "dependencies": {
     "@prisma/client": "^5.20.0",
+    "bcrypt": "^5.1.1",
     "express": "^4.21.1",
-    "prisma": "^5.20.0"
+    "jsonwebtoken": "^9.0.2",
+    "prisma": "^5.20.0",
+    "validator": "^13.12.0"
   }
 }

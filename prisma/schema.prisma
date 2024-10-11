@@ -13,9 +13,15 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum RoleEnum {
+  DENTIST
+  ADMIN
+  ASSISTANT
+}
+
 model Role {
   id           String        @id @default(uuid())
-  nom          String
+  nom          RoleEnum      @unique
   utilisateurs Utilisateur[]
 }
 
