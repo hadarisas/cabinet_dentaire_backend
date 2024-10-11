@@ -1,0 +1,155 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  id           String        @id @default(uuid())
+  nom          String
+  utilisateurs Utilisateur[]
+}
+
+model Utilisateur {
+  id         String       @id @default(uuid())
+  nom        String
+  prenom     String
+  email      String       @unique
+  motDePasse String
+  roles      Role[]
+  rendezVous RendezVous[]
+}
+
+model Patient {
+  id             String          @id @default(uuid())
+  nom            String
+  prenom         String
+  dateNaissance  DateTime
+  adresse        String
+  telephone      String
+  email          String
+  dossierMedical DossierMedical?
+  factures       Facture[]
+  rendezVous     RendezVous[]
+}
+
+model Machine {
+  id        String                      @id @default(uuid())
+  nom       String
+  modele    String
+  dateAchat DateTime
+  salles    Machine_SalleConsultation[]
+}
+
+model ProduitConsommable {
+  id       String                    @id @default(uuid())
+  nom      String
+  quantite Int
+  seuil    Int
+  soins    ProduitConsommable_Soin[]
+}
+
+model DossierMedical {
+  id             String         @id @default(uuid())
+  dateCreation   DateTime
+  patient        Patient        @relation(fields: [patientId], references: [id])
+  patientId      String         @unique
+  documents      Document[]
+  soinsEffectues SoinEffectue[]
+}
+
+model Document {
+  id               String         @id @default(uuid())
+  type             String
+  dateCreation     DateTime
+  fichier          Bytes
+  dossierMedical   DossierMedical @relation(fields: [dossierMedicalId], references: [id])
+  dossierMedicalId String
+}
+
+model Facture {
+  id        String   @id @default(uuid())
+  date      DateTime
+  montant   Float
+  statut    String
+  patient   Patient  @relation(fields: [patientId], references: [id])
+  patientId String
+}
+
+model Soin {
+  id             String                    @id @default(uuid())
+  code           String
+  description    String
+  prix           Float
+  soinsEffectues SoinEffectue[]
+  produits       ProduitConsommable_Soin[]
+}
+
+model Dent {
+  id             String         @id @default(uuid())
+  code           String
+  position       String
+  soinsEffectues SoinEffectue[]
+}
+
+model RendezVous {
+  id                  String            @id @default(uuid())
+  date                DateTime
+  duree               Int
+  patient             Patient           @relation(fields: [patientId], references: [id])
+  patientId           String
+  salleConsultation   SalleConsultation @relation(fields: [salleConsultationId], references: [id])
+  salleConsultationId String
+  utilisateur         Utilisateur       @relation(fields: [utilisateurId], references: [id])
+  utilisateurId       String
+  soinsEffectues      SoinEffectue[]
+}
+
+model SalleConsultation {
+  id         String                      @id @default(uuid())
+  numero     String
+  capacite   Int
+  rendezVous RendezVous[]
+  machines   Machine_SalleConsultation[]
+}
+
+model SoinEffectue {
+  id               String         @id @default(uuid())
+  date             DateTime
+  commentaire      String
+  soin             Soin           @relation(fields: [soinId], references: [id])
+  soinId           String
+  dent             Dent           @relation(fields: [dentId], references: [id])
+  dentId           String
+  rendezVous       RendezVous     @relation(fields: [rendezVousId], references: [id])
+  rendezVousId     String
+  dossierMedical   DossierMedical @relation(fields: [dossierMedicalId], references: [id])
+  dossierMedicalId String
+}
+
+model Machine_SalleConsultation {
+  machine             Machine           @relation(fields: [machineId], references: [id])
+  machineId           String
+  salleConsultation   SalleConsultation @relation(fields: [salleConsultationId], references: [id])
+  salleConsultationId String
+
+  @@id([machineId, salleConsultationId])
+}
+
+model ProduitConsommable_Soin {
+  produitConsommable   ProduitConsommable @relation(fields: [produitConsommableId], references: [id])
+  produitConsommableId String
+  soin                 Soin               @relation(fields: [soinId], references: [id])
+  soinId               String
+
+  @@id([produitConsommableId, soinId])
+}

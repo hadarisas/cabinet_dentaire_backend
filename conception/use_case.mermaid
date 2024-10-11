@@ -1,0 +1,43 @@
+graph TB
+    subgraph Centre Dentaire
+    A[Admin]
+    S[Secrétaire]
+    I[Infirmière]
+    D[Dentiste]
+    P[Patient]
+
+    UC0((Se connecter))
+    UC1((Gérer les machines))
+    UC2((Gérer les produits consommables))
+    UC3((Gérer les salles de consultation))
+    UC4((Gérer les rendez-vous))
+    UC5((Gérer les patients))
+    UC6((Gérer les dossiers médicaux))
+    UC7((Gérer les factures))
+    UC8((Effectuer des soins))
+    UC9((Consulter son dossier))
+    UC10((Gérer les comptes))
+
+    A --> UC1
+    A --> UC2
+    A --> UC3
+    A --> UC10
+    S --> UC4
+    S --> UC5
+    S --> UC7
+    I --> UC6
+    D --> UC6
+    D --> UC8
+    P --> UC9
+
+    UC1 -.-> | include | UC0
+    UC2 -.-> | include | UC0
+    UC3 -.-> | include | UC0
+    UC4 -.-> | include | UC0
+    UC5 -.-> | include | UC0
+    UC6 -.-> | include | UC0
+    UC7 -.-> | include | UC0
+    UC8 -.-> | include | UC0
+    UC9 -.-> | include | UC0
+    UC10 -.-> | include | UC0
+    end
