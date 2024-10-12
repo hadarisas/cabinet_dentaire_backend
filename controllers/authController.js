@@ -3,6 +3,37 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const validator = require("validator");
 
+/**
+ * @swagger
+ * tags:
+ *   name: Auth
+ *   description: API endpoints for authentication - and Users management
+ *
+ * /api/v1/users/login:
+ *   post:
+ *     summary: Login user
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *       400:
+ *         description: Bad request
+ *       500:
+ *         description: Internal server error
+ *
+ */
+
 async function login(req, res) {
   const { email, password } = req.body;
   if (!email || !password) {
@@ -34,6 +65,44 @@ async function login(req, res) {
   }
 }
 
+/**
+ * @swagger
+ * tags:
+ *   name: Auth
+ *   description: API endpoints for authentication
+ *
+ * /api/v1/users/add:
+ *   post:
+ *     summary: Create a new user
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nom:
+ *                 type: string
+ *               prenom:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               motDePasse:
+ *                 type: string
+ *               roles:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *     responses:
+ *       201:
+ *         description: User created successfully
+ *       400:
+ *         description: Bad request
+ *       500:
+ *         description: Internal server error
+ *
+ */
 async function addUser(req, res) {
   const { nom, prenom, email, motDePasse, roles } = req.body;
   if (!nom || !prenom || !email || !motDePasse || !roles) {
@@ -68,6 +137,23 @@ async function addUser(req, res) {
   }
 }
 
+/**
+ * @swagger
+ * tags:
+ *   name: Auth
+ *   description: API endpoints for authentication - Users management
+ *
+ * /api/v1/users:
+ *   get:
+ *     summary: Get all users
+ *     tags: [Auth]
+ *     responses:
+ *       200:
+ *         description: Users fetched successfully
+ *       500:
+ *         description: Internal server error
+ *
+ */
 async function getAllUsers(req, res) {
   try {
     const { page = 1, limit = 20 } = req.query;
@@ -82,6 +168,30 @@ async function getAllUsers(req, res) {
   }
 }
 
+/**
+ * @swagger
+ * tags:
+ *   name: Auth
+ *   description: API endpoints for authentication - Users management
+ *
+ * /api/v1/users/{id}:
+ *   get:
+ *     summary: Get a user by ID
+ *     tags: [Auth]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The ID of the user
+ *     responses:
+ *       200:
+ *         description: User fetched successfully
+ *       400:
+ *         description: Bad request
+ *       500:
+ *         description: Internal server error
+ *
+ */
 async function getUserById(req, res) {
   const { id } = req.params;
   if (!id) {
@@ -99,6 +209,49 @@ async function getUserById(req, res) {
   }
 }
 
+/**
+ * @swagger
+ * tags:
+ *   name: Auth
+ *   description: API endpoints for authentication - Users management
+ *
+ * /api/v1/users/{id}:
+ *   put:
+ *     summary: Update a user by ID
+ *     tags: [Auth]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The ID of the user
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nom:
+ *                 type: string
+ *               prenom:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               motDePasse:
+ *                 type: string
+ *               roles:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *     responses:
+ *       200:
+ *         description: User updated successfully
+ *       400:
+ *         description: Bad request
+ *       500:
+ *         description: Internal server error
+ *
+ */
 async function updateUser(req, res) {
   const { id } = req.params;
   const { nom, prenom, email, motDePasse, roles } = req.body;
@@ -137,6 +290,30 @@ async function updateUser(req, res) {
   }
 }
 
+/**
+ * @swagger
+ * tags:
+ *   name: Auth
+ *   description: API endpoints for authentication - Users management
+ *
+ * /api/v1/users/{id}:
+ *   delete:
+ *     summary: Delete a user by ID
+ *     tags: [Auth]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The ID of the user
+ *     responses:
+ *       200:
+ *         description: User deleted successfully
+ *       400:
+ *         description: Bad request
+ *       500:
+ *         description: Internal server error
+ *
+ */
 async function deleteUser(req, res) {
   const { id } = req.params;
   if (!id) {
