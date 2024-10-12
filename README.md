@@ -1,6 +1,6 @@
 # Backend for a 'Cabinet dentaire' project
 
-Built using express js and prisma and postgres.
+This the backend part of the 'Cabinet dentaire' project, Built using express js and prisma and postgres.
 
 ## Git clone this repository
 
@@ -73,3 +73,5 @@ npm run studio
 ```bash
 npm run dev
 ```
+
+## The project is not finished yet, other features will be added in AS SOON AS POSSIBLE.
