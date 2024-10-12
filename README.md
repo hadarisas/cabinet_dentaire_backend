@@ -74,4 +74,4 @@ npm run studio
 npm run dev
 ```
 
-## The project is not finished yet, other features will be added in AS SOON AS POSSIBLE.
+## The project is not finished yet, other features will be added in Coming days. so stay tuned!
