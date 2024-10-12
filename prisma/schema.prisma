@@ -4,6 +4,9 @@
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
+
+
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -33,6 +36,8 @@ model Utilisateur {
   motDePasse String
   roles      Role[]
   rendezVous RendezVous[]
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
 }
 
 model Patient {
@@ -46,6 +51,30 @@ model Patient {
   dossierMedical DossierMedical?
   factures       Facture[]
   rendezVous     RendezVous[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}
+
+model DossierMedical {
+  id             String         @id @default(uuid())
+  dateCreation   DateTime       @default(now())
+  patient        Patient        @relation(fields: [patientId], references: [id])
+  patientId      String         @unique
+  documents      Document[]
+  soinsEffectues SoinEffectue[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}
+
+model Document {
+  id               String         @id @default(uuid())
+  type             String
+  dateCreation     DateTime       @default(now())
+  fichier          String
+  dossierMedical   DossierMedical @relation(fields: [dossierMedicalId], references: [id])
+  dossierMedicalId String
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 }
 
 model Machine {
@@ -54,6 +83,8 @@ model Machine {
   modele    String
   dateAchat DateTime
   salles    Machine_SalleConsultation[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model ProduitConsommable {
@@ -62,25 +93,12 @@ model ProduitConsommable {
   quantite Int
   seuil    Int
   soins    ProduitConsommable_Soin[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-model DossierMedical {
-  id             String         @id @default(uuid())
-  dateCreation   DateTime
-  patient        Patient        @relation(fields: [patientId], references: [id])
-  patientId      String         @unique
-  documents      Document[]
-  soinsEffectues SoinEffectue[]
-}
 
-model Document {
-  id               String         @id @default(uuid())
-  type             String
-  dateCreation     DateTime
-  fichier          Bytes
-  dossierMedical   DossierMedical @relation(fields: [dossierMedicalId], references: [id])
-  dossierMedicalId String
-}
+
 
 model Facture {
   id        String   @id @default(uuid())
@@ -89,6 +107,8 @@ model Facture {
   statut    String
   patient   Patient  @relation(fields: [patientId], references: [id])
   patientId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Soin {
@@ -98,6 +118,8 @@ model Soin {
   prix           Float
   soinsEffectues SoinEffectue[]
   produits       ProduitConsommable_Soin[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
 }
 
 model Dent {
@@ -105,6 +127,8 @@ model Dent {
   code           String
   position       String
   soinsEffectues SoinEffectue[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
 }
 
 model RendezVous {
@@ -118,6 +142,8 @@ model RendezVous {
   utilisateur         Utilisateur       @relation(fields: [utilisateurId], references: [id])
   utilisateurId       String
   soinsEffectues      SoinEffectue[]
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
 }
 
 model SalleConsultation {
@@ -126,6 +152,8 @@ model SalleConsultation {
   capacite   Int
   rendezVous RendezVous[]
   machines   Machine_SalleConsultation[]
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
 }
 
 model SoinEffectue {
@@ -140,6 +168,8 @@ model SoinEffectue {
   rendezVousId     String
   dossierMedical   DossierMedical @relation(fields: [dossierMedicalId], references: [id])
   dossierMedicalId String
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 }
 
 model Machine_SalleConsultation {
@@ -147,6 +177,8 @@ model Machine_SalleConsultation {
   machineId           String
   salleConsultation   SalleConsultation @relation(fields: [salleConsultationId], references: [id])
   salleConsultationId String
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
 
   @@id([machineId, salleConsultationId])
 }
@@ -156,6 +188,8 @@ model ProduitConsommable_Soin {
   produitConsommableId String
   soin                 Soin               @relation(fields: [soinId], references: [id])
   soinId               String
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
 
   @@id([produitConsommableId, soinId])
 }

@@ -75,6 +75,13 @@ async function login(req, res) {
  *   post:
  *     summary: Create a new user
  *     tags: [Auth]
+ *     parameters:
+ *       - in: header
+ *         name: x-access-token
+ *         required: true
+ *         description: The access token for authentication
+ *         schema:
+ *           type: string
  *     requestBody:
  *       required: true
  *       content:
@@ -147,6 +154,13 @@ async function addUser(req, res) {
  *   get:
  *     summary: Get all users
  *     tags: [Auth]
+ *     parameters:
+ *       - in: header
+ *         name: x-access-token
+ *         required: true
+ *         description: The access token for authentication
+ *         schema:
+ *           type: string
  *     responses:
  *       200:
  *         description: Users fetched successfully
@@ -179,10 +193,18 @@ async function getAllUsers(req, res) {
  *     summary: Get a user by ID
  *     tags: [Auth]
  *     parameters:
+ *       - in: header
+ *         name: x-access-token
+ *         required: true
+ *         description: The access token for authentication
+ *         schema:
+ *           type: string
  *       - in: path
  *         name: id
  *         required: true
  *         description: The ID of the user
+ *         schema:
+ *           type: string
  *     responses:
  *       200:
  *         description: User fetched successfully
@@ -220,10 +242,18 @@ async function getUserById(req, res) {
  *     summary: Update a user by ID
  *     tags: [Auth]
  *     parameters:
+ *       - in: header
+ *         name: x-access-token
+ *         required: true
+ *         description: The access token for authentication
+ *         schema:
+ *           type: string
  *       - in: path
  *         name: id
  *         required: true
  *         description: The ID of the user
+ *         schema:
+ *           type: string
  *     requestBody:
  *       required: true
  *       content:
@@ -301,10 +331,18 @@ async function updateUser(req, res) {
  *     summary: Delete a user by ID
  *     tags: [Auth]
  *     parameters:
+ *       - in: header
+ *         name: x-access-token
+ *         required: true
+ *         description: The access token for authentication
+ *         schema:
+ *           type: string
  *       - in: path
  *         name: id
  *         required: true
  *         description: The ID of the user
+ *         schema:
+ *           type: string
  *     responses:
  *       200:
  *         description: User deleted successfully

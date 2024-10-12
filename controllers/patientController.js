@@ -1,16 +1,25 @@
 const prisma = require("../config/prisma");
 const validator = require("validator");
 
+const { formatDateToDDMMYYYY, formatDate } = require("../utils/dateFormatter");
+
 /**
  * @swagger
  * tags:
  *   name: Patients
  *   description: API endpoints for managing patients
  *
- * /api/v1/patients/add:
+ * /api/v1/patients/add/{patientId}:
  *   post:
  *     summary: Create a new patient
  *     tags: [Patients]
+ *     parameters:
+ *       - in: header
+ *         name: x-access-token
+ *         required: true
+ *         description: The access token for authentication
+ *         schema:
+ *           type: string
  *     requestBody:
  *       required: true
  *       content:
@@ -20,22 +29,16 @@ const validator = require("validator");
  *             properties:
  *               nom:
  *                 type: string
- *                 description: The patient's last name
  *               prenom:
  *                 type: string
- *                 description: The patient's first name
  *               dateNaissance:
  *                 type: string
- *                 description: The patient's birth date
  *               adresse:
  *                 type: string
- *                 description: The patient's address
  *               telephone:
  *                 type: string
- *                 description: The patient's phone number
  *               email:
  *                 type: string
- *                 description: The patient's email
  *     responses:
  *       201:
  *         description: Patient created successfully
@@ -54,8 +57,16 @@ async function addPatient(req, res) {
     if (!nom || !prenom || !dateNaissance || !adresse || !telephone || !email) {
       return res.status(400).json({ message: "All fields are required" });
     }
+    const formattedDateNaissance = formatDate(dateNaissance);
     await prisma.patient.create({
-      data: { nom, prenom, dateNaissance, adresse, telephone, email },
+      data: {
+        nom,
+        prenom,
+        dateNaissance: formattedDateNaissance,
+        adresse,
+        telephone,
+        email,
+      },
     });
     res.status(201).json({ message: "Patient created successfully" });
   } catch (error) {
@@ -73,6 +84,13 @@ async function addPatient(req, res) {
  *   get:
  *     summary: Get all patients
  *     tags: [Patients]
+ *     parameters:
+ *       - in: header
+ *         name: x-access-token
+ *         required: true
+ *         description: The access token for authentication
+ *         schema:
+ *           type: string
  *     responses:
  *       200:
  *         description: List of patients
@@ -100,10 +118,12 @@ async function getAllPatients(req, res) {
  *     summary: Get a patient by ID
  *     tags: [Patients]
  *     parameters:
- *       - in: path
- *         name: id
+ *       - in: header
+ *         name: x-access-token
  *         required: true
- *         description: The ID of the patient
+ *         description: The access token for authentication
+ *         schema:
+ *           type: string
  *     responses:
  *       200:
  *         description: Patient details
@@ -142,6 +162,12 @@ async function getPatientById(req, res) {
  *     summary: Delete a patient by ID
  *     tags: [Patients]
  *     parameters:
+ *       - in: header
+ *         name: x-access-token
+ *         required: true
+ *         description: The access token for authentication
+ *         schema:
+ *           type: string
  *       - in: path
  *         name: id
  *         required: true
@@ -179,10 +205,31 @@ async function deletePatient(req, res) {
  *     summary: Update a patient by ID
  *     tags: [Patients]
  *     parameters:
- *       - in: path
- *         name: id
+ *       - in: header
+ *         name: x-access-token
  *         required: true
- *         description: The ID of the patient
+ *         description: The access token for authentication
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nom:
+ *                 type: string
+ *               prenom:
+ *                 type: string
+ *               dateNaissance:
+ *                 type: string
+ *               adresse:
+ *                 type: string
+ *               telephone:
+ *                 type: string
+ *               email:
+ *                 type: string
  *     responses:
  *       200:
  *         description: Patient updated successfully

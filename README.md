@@ -47,7 +47,7 @@ docker run -d --name cabinet_db_container -v /absolute_path_to_postgres_db_data:
 ## Create a .env file and add the environment variables
 
 ```bash
-cp example_env .env
+cp example_env.txt .env
 ```
 
 ## Push the database schema to the database
