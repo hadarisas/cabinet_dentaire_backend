@@ -1,9 +1,6 @@
 const prisma = require("../config/prisma");
-const validator = require("validator");
-const { storage } = require("../utils/upload");
-const fs = require("fs");
-const path = require("path");
 const { uploadFile } = require("../utils/upload");
+
 /**
  *
  * @swagger
@@ -80,13 +77,13 @@ async function addDocument(req, res) {
  * @swagger
  * /api/v1/documents/{id}:
  *   put:
- *     summary: Mettre à jour un document
+ *     summary: Update a document
  *     tags: [Documents]
  *     parameters:
  *       - in: header
  *         name: x-access-token
  *         type: string
- *         description: Le token d'authentification
+ *         description: The access token for authentication
  *       - in: path
  *         name: id
  *         type: string
@@ -98,25 +95,28 @@ async function addDocument(req, res) {
  *           schema:
  *             type: object
  *             properties:
+ *               patientId:
+ *                 type: string
+ *                 description: The ID of the patient
  *               type:
  *                 type: string
- *                 description: Le type du document
+ *                 description: The type of the document
  *               dossierMedicalId:
  *                 type: string
- *                 description: L'ID du dossier medical
+ *                 description: The ID of the medical record
  *               fichier:
  *                 type: file
- *                 description: Le fichier du document
+ *                 description: The file of the document
  *     responses:
  *       200:
- *         description: Document mis à jour avec succès
+ *         description: Document updated successfully
  *       400:
- *         description: Erreur lors de la mise à jour du document
+ *         description: Error when updating the document
  *       500:
- *         description: Erreur interne du serveur
+ *         description: Internal server error
  */
 async function updateDocument(req, res) {
-  const { type, dossierMedicalId } = req.body;
+  const { type, dossierMedicalId, patientId } = req.body;
 
   if (!type || !dossierMedicalId) {
     return res.status(400).json({ message: "All fields are required" });
@@ -127,7 +127,7 @@ async function updateDocument(req, res) {
     if (dossierMedicalId) dataToUpdate.dossierMedicalId = dossierMedicalId;
 
     if (req.file) {
-      const uploadResult = await uploadFile(req.file, req.params.patientId);
+      const uploadResult = await uploadFile(req.file, patientId);
       if (!uploadResult.success) {
         return res.status(400).json({ message: uploadResult.message });
       }
@@ -139,6 +139,47 @@ async function updateDocument(req, res) {
       data: dataToUpdate,
     });
     return res.status(200).json({ message: "Document updated successfully" });
+  } catch (error) {
+    console.error(error.message);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+/**
+ *
+ * @swagger
+ * /api/v1/documents/{id}:
+ *   delete:
+ *     summary: Delete a document by its ID
+ *     tags: [Documents]
+ *     parameters:
+ *       - in: header
+ *         name: x-access-token
+ *         type: string
+ *         description: The access token for authentication
+ *       - in: path
+ *         name: id
+ *         type: string
+ *         description: The ID of the document
+ *     responses:
+ *       200:
+ *         description: Document deleted successfully
+ *       400:
+ *         description: Document ID is required
+ *       500:
+ *         description: Internal server error
+ */
+async function deleteDocument(req, res) {
+  const { id } = req.params;
+
+  if (!id) {
+    return res.status(400).json({ message: "Document ID is required" });
+  }
+  try {
+    await prisma.document.delete({
+      where: { id },
+    });
+    return res.status(200).json({ message: "Document deleted successfully" });
   } catch (error) {
     console.error(error.message);
     return res.status(500).json({ message: "Internal server error" });
@@ -171,6 +212,8 @@ async function updateDocument(req, res) {
  */
 async function getDocuments(req, res) {
   const { dossierMedicalId } = req.params;
+  const { page = 1, limit = 10 } = req.query;
+
   console.log(`dossierMedicalId: ${dossierMedicalId}`);
 
   const dossierMedical = await prisma.dossierMedical.findUnique({
@@ -183,6 +226,8 @@ async function getDocuments(req, res) {
   try {
     const documents = await prisma.document.findMany({
       where: { dossierMedicalId },
+      skip: (page - 1) * limit,
+      take: Number(limit) * 1,
     });
 
     return res.status(200).json(documents);
@@ -230,47 +275,6 @@ async function getDocumentById(req, res) {
       return res.status(404).json({ message: "Document not found" });
     }
     return res.status(200).json(document);
-  } catch (error) {
-    console.error(error.message);
-    return res.status(500).json({ message: "Internal server error" });
-  }
-}
-
-/**
- *
- * @swagger
- * /api/v1/documents/{id}:
- *   delete:
- *     summary: Delete a document by its ID
- *     tags: [Documents]
- *     parameters:
- *       - in: header
- *         name: x-access-token
- *         type: string
- *         description: The access token for authentication
- *       - in: path
- *         name: id
- *         type: string
- *         description: The ID of the document
- *     responses:
- *       200:
- *         description: Document deleted successfully
- *       400:
- *         description: Document ID is required
- *       500:
- *         description: Internal server error
- */
-async function deleteDocument(req, res) {
-  const { id } = req.params;
-
-  if (!id) {
-    return res.status(400).json({ message: "Document ID is required" });
-  }
-  try {
-    await prisma.document.delete({
-      where: { id },
-    });
-    return res.status(200).json({ message: "Document deleted successfully" });
   } catch (error) {
     console.error(error.message);
     return res.status(500).json({ message: "Internal server error" });

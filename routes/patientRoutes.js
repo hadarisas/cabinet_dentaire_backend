@@ -8,6 +8,7 @@ const {
   getPatientById,
   deletePatient,
   updatePatient,
+  getDossierMedical,
 } = require("../controllers/patientController");
 
 router.use(authJwt.verifyToken);
@@ -16,5 +17,10 @@ router.get("/all", authJwt.isAssistant || authJwt.isAdmin, getAllPatients);
 router.get("/:id", authJwt.isAssistant || authJwt.isAdmin, getPatientById);
 router.delete("/:id", authJwt.isAssistant || authJwt.isAdmin, deletePatient);
 router.put("/:id", authJwt.isAssistant || authJwt.isAdmin, updatePatient);
+router.get(
+  "/:id/dossier-medical",
+  authJwt.isAssistant || authJwt.isAdmin,
+  getDossierMedical
+);
 
 module.exports = router;

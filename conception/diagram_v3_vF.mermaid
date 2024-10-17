@@ -1,0 +1,99 @@
+classDiagram
+    class Patient {
+        -id: int
+        -nom: string
+        -prenom: string
+        -dateNaissance: date
+        -adresse: string
+        -telephone: string
+        -email: string
+    }
+    class DossierMedical {
+        -id: int
+        -dateCreation: date
+    }
+    class Document {
+        -id: int
+        -type: string
+        -dateCreation: date
+        -fichier: blob
+    }
+    class Facture {
+        -id: int
+        -date: date
+        -montant: float
+        -statut: string
+    }
+    
+    class Soin {
+        -code: string
+        -description: string
+        -prix: float
+    }
+    class FactureSoin {
+        -id: string
+        -factureId: string
+        -soinId: string
+        -montant: float
+    }
+
+    class Dent {
+        -code: int
+        -position: string
+    }
+    class RendezVous {
+        -id: int
+        -date: datetime
+        -duree: int
+    }
+    class SalleConsultation {
+        -id: int
+        -numero: string
+        -capacite: int
+    }
+    class Machine {
+        -id: int
+        -nom: string
+        -modele: string
+        -dateAchat: date
+    }
+    class ProduitConsommable {
+        -id: int
+        -nom: string
+        -quantite: int
+        -seuil: int
+    }
+    class Utilisateur {
+        -id: int
+        -nom: string
+        -prenom: string
+        -email: string
+        -motDePasse: string
+    }
+    class Role {
+        -id: int
+        -nom: string
+    }
+    class SoinEffectue {
+        -id: int
+        -date: date
+        -commentaire: string
+    }
+
+    Utilisateur "*" -- "1..*" Role
+    Utilisateur "1" -- "*" RendezVous
+    Patient "1" -- "1" DossierMedical
+    DossierMedical "1" -- "*" Document
+    Patient "1" -- "*" Facture
+    Patient "1" -- "*" RendezVous
+    RendezVous "1" -- "1" SalleConsultation
+   
+    SoinEffectue "*" -- "1" Soin
+    SoinEffectue "*" -- "1" Dent
+    SoinEffectue "*" -- "1" RendezVous
+    Machine "*" -- "*" SalleConsultation : Machine_SalleConsultation
+    ProduitConsommable "*" -- "*" Soin: ProduitConsommable_Soin
+    
+    DossierMedical "1" -- "*" SoinEffectue
+    Facture "1" -- "*" FactureSoin
+    Soin "1" -- "*" FactureSoin
