@@ -1,5 +1,5 @@
 const prisma = require("../config/prisma");
-const { uploadFile } = require("../utils/upload");
+const { uploadFile, deleteFile } = require("../utils/files");
 
 /**
  *
@@ -8,7 +8,7 @@ const { uploadFile } = require("../utils/upload");
  *   name: Documents
  *   description: API endpoints for managing documents
  *
- * /api/v1/documents/{patientId}:
+ * /api/v1/documents:
  *   post:
  *     summary: Add a document
  *     tags: [Documents]
@@ -17,10 +17,6 @@ const { uploadFile } = require("../utils/upload");
  *         name: x-access-token
  *         type: string
  *         description: The access token for authentication
- *       - in: path
- *         name: patientId
- *         type: string
- *         description: The ID of the patient
  *     requestBody:
  *       required: true
  *       content:
@@ -31,9 +27,12 @@ const { uploadFile } = require("../utils/upload");
  *               type:
  *                 type: string
  *                 description: The type of the document
- *               dossierMedicalId:
+ *               description:
  *                 type: string
- *                 description: The ID of the medical record
+ *                 description: The description of the document
+ *               patientId:
+ *                 type: string
+ *                 description: The ID of the patient
  *               fichier:
  *                 type: file
  *                 description: The file of the document
@@ -47,25 +46,30 @@ const { uploadFile } = require("../utils/upload");
  *
  */
 async function addDocument(req, res) {
-  const { type, dossierMedicalId } = req.body;
+  const { type, description, patientId } = req.body;
 
-  if (!type || !dossierMedicalId) {
-    return res.status(400).json({ message: "All fields are required" });
+  if (!type || !description || !patientId) {
+    return res
+      .status(400)
+      .json({ message: "type, description and patientId are required" });
   }
 
   try {
     if (!req.file) {
       return res.status(400).json({ message: "Upload failed" });
     }
-    const uploadResult = await uploadFile(req.file, req.params.patientId);
+    const uploadResult = await uploadFile(req.file, patientId);
 
     if (!uploadResult.success) {
       return res.status(400).json({ message: uploadResult.message });
     }
+    console.log(`uploadResult.filePath: ${uploadResult.filePath}`);
     const document = await prisma.document.create({
-      data: { type, dossierMedicalId, fichier: uploadResult.filePath },
+      data: { type, description, patientId, fichier: uploadResult.filePath },
     });
-    return res.status(200).json({ message: "Document added successfully" });
+    return res
+      .status(200)
+      .json({ message: "Document added successfully", document });
   } catch (error) {
     console.error(error.message);
     return res.status(500).json({ message: "Internal server error" });
@@ -101,9 +105,9 @@ async function addDocument(req, res) {
  *               type:
  *                 type: string
  *                 description: The type of the document
- *               dossierMedicalId:
+ *               description:
  *                 type: string
- *                 description: The ID of the medical record
+ *                 description: The description of the document
  *               fichier:
  *                 type: file
  *                 description: The file of the document
@@ -116,16 +120,18 @@ async function addDocument(req, res) {
  *         description: Internal server error
  */
 async function updateDocument(req, res) {
-  const { type, dossierMedicalId, patientId } = req.body;
-
-  if (!type || !dossierMedicalId) {
-    return res.status(400).json({ message: "All fields are required" });
-  }
+  const { type, description, patientId } = req.body;
   try {
     const dataToUpdate = {};
     if (type) dataToUpdate.type = type;
-    if (dossierMedicalId) dataToUpdate.dossierMedicalId = dossierMedicalId;
-
+    if (description) dataToUpdate.description = description;
+    if (patientId) dataToUpdate.patientId = patientId;
+    const document = await prisma.document.findUnique({
+      where: { id: req.params.id },
+    });
+    if (!document) {
+      return res.status(404).json({ message: "Document not found" });
+    }
     if (req.file) {
       const uploadResult = await uploadFile(req.file, patientId);
       if (!uploadResult.success) {
@@ -133,12 +139,13 @@ async function updateDocument(req, res) {
       }
       dataToUpdate.fichier = uploadResult.filePath;
     }
-
-    await prisma.document.update({
+    const updatedDocument = await prisma.document.update({
       where: { id: req.params.id },
       data: dataToUpdate,
     });
-    return res.status(200).json({ message: "Document updated successfully" });
+    return res
+      .status(200)
+      .json({ message: "Document updated successfully", updatedDocument });
   } catch (error) {
     console.error(error.message);
     return res.status(500).json({ message: "Internal server error" });
@@ -176,6 +183,17 @@ async function deleteDocument(req, res) {
     return res.status(400).json({ message: "Document ID is required" });
   }
   try {
+    //delete file from storage
+    const document = await prisma.document.findUnique({
+      where: { id },
+    });
+    if (!document) {
+      return res.status(404).json({ message: "Document not found" });
+    }
+    const deleteFileResult = await deleteFile(document.fichier);
+    if (!deleteFileResult.success) {
+      return res.status(400).json({ message: deleteFileResult.message });
+    }
     await prisma.document.delete({
       where: { id },
     });
@@ -189,9 +207,9 @@ async function deleteDocument(req, res) {
 /**
  *
  * @swagger
- * /api/v1/documents/{dossierMedicalId}:
+ * /api/v1/documents/patient/{patientId}:
  *   get:
- *     summary: Get the documents of a medical record
+ *     summary: Get the documents of a patient
  *     tags: [Documents]
  *     parameters:
  *       - in: header
@@ -199,33 +217,29 @@ async function deleteDocument(req, res) {
  *         type: string
  *         description: The access token for authentication
  *       - in: path
- *         name: dossierMedicalId
+ *         name: patientId
  *         type: string
- *         description: The ID of the medical record
+ *         description: The ID of the patient
  *     responses:
  *       200:
  *         description: Documents retrieved successfully
  *       404:
- *         description: Medical record not found
+ *         description: Patient not found
  *       500:
  *         description: Internal server error
  */
 async function getDocuments(req, res) {
-  const { dossierMedicalId } = req.params;
+  const { patientId } = req.params;
   const { page = 1, limit = 10 } = req.query;
-
-  console.log(`dossierMedicalId: ${dossierMedicalId}`);
-
-  const dossierMedical = await prisma.dossierMedical.findUnique({
-    where: { id: dossierMedicalId },
-  });
-  if (!dossierMedical) {
-    return res.status(404).json({ message: "Dossier medical not found" });
-  }
-
   try {
+    const patient = await prisma.patient.findUnique({
+      where: { id: patientId },
+    });
+    if (!patient) {
+      return res.status(404).json({ message: "Patient not found" });
+    }
     const documents = await prisma.document.findMany({
-      where: { dossierMedicalId },
+      where: { patientId },
       skip: (page - 1) * limit,
       take: Number(limit) * 1,
     });
@@ -240,7 +254,7 @@ async function getDocuments(req, res) {
 /**
  *
  * @swagger
- * /api/v1/documents/id/{id}:
+ * /api/v1/documents/{id}:
  *   get:
  *     summary: Get a document by its ID
  *     tags: [Documents]

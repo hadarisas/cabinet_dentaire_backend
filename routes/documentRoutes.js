@@ -2,6 +2,13 @@ const express = require("express");
 const router = require("express").Router();
 const authJwt = require("../middlewares/auth");
 
+const {
+  addDocument,
+  getDocuments,
+  getDocumentById,
+  deleteDocument,
+  updateDocument,
+} = require("../controllers/documentController");
 const multer = require("multer");
 
 const upload = multer({
@@ -12,13 +19,11 @@ const upload = multer({
 });
 
 router.use(authJwt.verifyToken);
-/*
-router.post(
-  "/:patientId",
-  authJwt.isAssistant || authJwt.isAdmin,
-  upload.single("fichier"),
-  addDocument
-);
-*/
+
+router.post("/", upload.single("fichier"), addDocument);
+router.get("/patient/:patientId", getDocuments);
+router.get("/:id", getDocumentById);
+router.delete("/:id", deleteDocument);
+router.put("/:id", updateDocument);
 
 module.exports = router;
