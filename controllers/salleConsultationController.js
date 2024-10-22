@@ -26,8 +26,8 @@ const prisma = require("../config/prisma");
  *             properties:
  *               numero:
  *                 type: string
- *               capacite:
- *                 type: integer
+ *               disponibilite:
+ *                 type: boolean
  *     responses:
  *       201:
  *         description: Salle consultation created successfully
@@ -38,16 +38,16 @@ const prisma = require("../config/prisma");
  */
 
 async function addSalleConsultation(req, res) {
-  const { numero, capacite } = req.body;
+  const { numero, disponibilite = true } = req.body;
   try {
-    if (!numero || !capacite) {
+    if (!numero) {
       return res.status(400).json({ message: "All fields are required" });
     }
-    if (typeof capacite !== "number" || capacite <= 0) {
-      return res.status(400).json({ message: "Invalid capacity" });
-    }
     await prisma.salleConsultation.create({
-      data: { numero, capacite },
+      data: { numero, disponibilite },
+      include: {
+        machines: true,
+      },
     });
     return res
       .status(201)
@@ -135,8 +135,8 @@ async function getSallesConsultation(req, res) {
  *             properties:
  *               numero:
  *                 type: string
- *               capacite:
- *                 type: integer
+ *               disponibilite:
+ *                 type: boolean
  *     responses:
  *       200:
  *         description: Salle consultation updated successfully
@@ -147,7 +147,7 @@ async function getSallesConsultation(req, res) {
  */
 async function updateSalleConsultation(req, res) {
   const { id } = req.params;
-  const { numero, capacite } = req.body;
+  const { numero, disponibilite } = req.body;
   try {
     const existingSalleConsultation = await prisma.salleConsultation.findUnique(
       {
@@ -159,7 +159,7 @@ async function updateSalleConsultation(req, res) {
     }
     const dataToUpdate = {};
     if (numero) dataToUpdate.numero = numero;
-    if (capacite) dataToUpdate.capacite = capacite;
+    if (disponibilite) dataToUpdate.disponibilite = disponibilite;
     await prisma.salleConsultation.update({
       where: { id },
       data: dataToUpdate,

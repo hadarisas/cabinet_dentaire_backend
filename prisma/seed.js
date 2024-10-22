@@ -63,6 +63,7 @@ async function main() {
         nom: process.env.ADMIN_NOM,
         prenom: process.env.ADMIN_PRENOM,
         email: process.env.ADMIN_EMAIL,
+        numeroTelephone: process.env.ADMIN_PHONE_NUMBER,
         motDePasse: hashedPassword,
         roles: { connect: adminRoles.map((role) => ({ nom: role })) },
       },

@@ -34,6 +34,7 @@ model Utilisateur {
   prenom     String
   email      String       @unique
   motDePasse String
+  numeroTelephone String
   roles      Role[]
   rendezVous RendezVous[]
   createdAt  DateTime       @default(now())
@@ -47,10 +48,10 @@ model Patient {
   dateNaissance  DateTime
   adresse        String
   telephone      String
-  email          String
-  dossierMedical DossierMedical?
+  email          String          @unique
   factures       Facture[]
   rendezVous     RendezVous[]
+  documents       Document[]
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 }
@@ -60,15 +61,41 @@ model Machine {
   nom       String
   modele    String
   dateAchat DateTime
+  dateDerniereRevision DateTime
   salles    Machine_SalleConsultation[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
+model Machine_SalleConsultation {
+  machine             Machine           @relation(fields: [machineId], references: [id], onDelete: Cascade)
+  machineId           String
+  salleConsultation   SalleConsultation @relation(fields: [salleConsultationId], references: [id], onDelete: Cascade)
+  salleConsultationId String
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  @@id([machineId, salleConsultationId])
+}
+
+
+model SalleConsultation {
+  id         String                      @id @default(uuid())
+  numero     String
+  disponibilite Boolean
+  rendezVous RendezVous[]
+  machines   Machine_SalleConsultation[]
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+}
+//Soins effectués necessite vérification
 model RendezVous {
   id                  String            @id @default(uuid())
   startDate           DateTime
   endDate             DateTime
+  status              String
+  motif               String
+  notes               String
   patient             Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
   patientId           String
   salleConsultation   SalleConsultation @relation(fields: [salleConsultationId], references: [id], onDelete: Cascade)
@@ -80,26 +107,6 @@ model RendezVous {
   updatedAt           DateTime       @updatedAt
 }
 
-model SalleConsultation {
-  id         String                      @id @default(uuid())
-  numero     String
-  capacite   Int
-  rendezVous RendezVous[]
-  machines   Machine_SalleConsultation[]
-  createdAt  DateTime       @default(now())
-  updatedAt  DateTime       @updatedAt
-}
-
-model ProduitConsommable {
-  id       String                    @id @default(uuid())
-  nom      String
-  quantite Int
-  seuil    Int
-  soins    ProduitConsommable_Soin[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
 model Dent {
   code           Int @id
   position       String
@@ -107,25 +114,28 @@ model Dent {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 }
-
-model DossierMedical {
-  id             String         @id @default(uuid())
-  dateCreation   DateTime       @default(now())
-  patient        Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  patientId      String         @unique
-  documents      Document[]
-  soinsEffectues SoinEffectue[]
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+// AssignToSoin and RemoveFromSoin necessite vérification
+model ProduitConsommable {
+  id       String                    @id @default(uuid())
+  nom      String
+  quantite Int
+  seuil    Int
+  fournisseur String
+  prixUnitaire Float
+  soins    ProduitConsommable_Soin[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
+
 
 model Document {
   id               String         @id @default(uuid())
   type             String
   dateCreation     DateTime       @default(now())
   fichier          String
-  dossierMedical   DossierMedical @relation(fields: [dossierMedicalId], references: [id], onDelete: Cascade)
-  dossierMedicalId String
+  description      String
+  patient          Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patientId        String
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 }
@@ -134,6 +144,7 @@ model Soin {
   code           String @id @default(uuid())
   description    String
   prix           Float
+  categorie      String
   soinsEffectues SoinEffectue[]
   produits       ProduitConsommable_Soin[]
   factureSoins   FactureSoin[]
@@ -144,8 +155,10 @@ model Soin {
 model Facture {
   id        String   @id @default(uuid())
   date      DateTime
-  montantTotal   Float
+  montant   Float
   statut    String
+  methodPaiement String
+  dateEcheance DateTime
   patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
   patientId String
   factureSoins  FactureSoin[]
@@ -175,24 +188,12 @@ model SoinEffectue {
   dentId           Int
   rendezVous       RendezVous     @relation(fields: [rendezVousId], references: [id], onDelete: Cascade)
   rendezVousId     String
-  dossierMedical   DossierMedical @relation(fields: [dossierMedicalId], references: [id], onDelete: Cascade)
-  dossierMedicalId String
   facture         Facture?        @relation(fields: [factureId], references: [id])
   factureId       String?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 }
 
-model Machine_SalleConsultation {
-  machine             Machine           @relation(fields: [machineId], references: [id], onDelete: Cascade)
-  machineId           String
-  salleConsultation   SalleConsultation @relation(fields: [salleConsultationId], references: [id], onDelete: Cascade)
-  salleConsultationId String
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
-
-  @@id([machineId, salleConsultationId])
-}
 
 model ProduitConsommable_Soin {
   produitConsommable   ProduitConsommable @relation(fields: [produitConsommableId], references: [id], onDelete: Cascade)

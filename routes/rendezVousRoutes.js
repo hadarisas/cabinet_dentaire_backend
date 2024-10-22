@@ -10,11 +10,13 @@ const {
   getAppointmentById,
   getAppoitmentsByUserId,
   getAllAppointments,
+  getAllActiveAppointments,
 } = require("../controllers/rendezVousController");
 
 router.use(authJwt.verifyToken);
 
 router.post("/", addAppointment);
+router.get("/active", getAllActiveAppointments);
 router.get("/", getAllAppointments);
 router.get("/patient/:patientId", getAppointmentsByPatientId);
 router.get("/user/:userId", getAppoitmentsByUserId);

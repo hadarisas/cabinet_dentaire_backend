@@ -3,7 +3,7 @@ function formatDate(date) {
 }
 
 function formatDateAndTime(date, time) {
-  const [year, month, day] = date.split("/");
+  const [year, month, day] = date.split("-");
   const [hours, minutes] = time.split(":");
   const formattedDate = new Date(
     Date.UTC(year, month - 1, day, hours, minutes)

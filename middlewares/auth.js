@@ -27,7 +27,11 @@ const verifyRole = async (req, res, next, role) => {
       where: { id: req.userId },
       include: { roles: true },
     });
-    if (user && user.roles.some((r) => r.nom === role)) {
+    if (
+      user &&
+      (user.roles.some((r) => r.nom === role) ||
+        user.roles.some((r) => r.nom === "ADMIN"))
+    ) {
       next();
     } else {
       res.status(403).send({ message: `${role} Required!` });
@@ -40,6 +44,7 @@ const verifyRole = async (req, res, next, role) => {
 const isAdmin = (req, res, next) => {
   verifyRole(req, res, next, "ADMIN");
 };
+
 const isDentiste = (req, res, next) => {
   verifyRole(req, res, next, "DENTIST");
 };
@@ -47,11 +52,22 @@ const isAssistant = (req, res, next) => {
   verifyRole(req, res, next, "ASSISTANT");
 };
 
+const isDentistOrAssistant = (req, res, next) => {
+  if (req.userId) {
+    verifyRole(req, res, next, "DENTIST").catch(() => {
+      verifyRole(req, res, next, "ASSISTANT");
+    });
+  } else {
+    res.status(403).send({ message: "User ID not found!" });
+  }
+};
+
 const authJwt = {
   verifyToken,
   isAdmin,
   isDentiste,
   isAssistant,
+  isDentistOrAssistant,
 };
 
 module.exports = authJwt;

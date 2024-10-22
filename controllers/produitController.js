@@ -34,6 +34,12 @@ const prisma = require("../config/prisma");
  *               seuil:
  *                 type: number
  *                 description: Threshold for the produit
+ *               fournisseur:
+ *                 type: string
+ *                 description: Supplier of the produit
+ *               prixUnitaire:
+ *                 type: number
+ *                 description: Unit price of the produit
  *     responses:
  *       201:
  *         description: Produit added successfully
@@ -43,9 +49,9 @@ const prisma = require("../config/prisma");
  *         description: Internal server error
  */
 async function addProduit(req, res) {
-  const { nom, quantite, seuil } = req.body;
+  const { nom, quantite, seuil, fournisseur, prixUnitaire } = req.body;
 
-  if (!nom || !quantite || !seuil) {
+  if (!nom || !quantite || !seuil || !fournisseur || !prixUnitaire) {
     return res.status(400).json({ message: "All fields are required" });
   }
   if (typeof quantite !== "number" || quantite <= 0) {
@@ -56,10 +62,13 @@ async function addProduit(req, res) {
   if (typeof seuil !== "number" || seuil <= 0) {
     return res.status(400).json({ message: "Seuil must be a positive number" });
   }
+  if (typeof prixUnitaire !== "number" || prixUnitaire <= 0) {
+    return res.status(400).json({ message: "Price must be a positive number" });
+  }
 
   try {
     await prisma.produitConsommable.create({ data: req.body });
-    return res.status(201).json({ message: "Produit added successfully" });
+    return res.status(200).json({ message: "Produit added successfully" });
   } catch (error) {
     console.log(error.message);
     return res.status(500).json({ message: "Internal server error" });
@@ -102,6 +111,12 @@ async function addProduit(req, res) {
  *               seuil:
  *                 type: number
  *                 description: Updated seuil of the produit
+ *               fournisseur:
+ *                 type: string
+ *                 description: Updated supplier of the produit
+ *               prixUnitaire:
+ *                 type: number
+ *                 description: Updated unit price of the produit
  *     responses:
  *       200:
  *         description: Produit updated successfully
@@ -114,7 +129,7 @@ async function addProduit(req, res) {
  */
 async function updateProduit(req, res) {
   const { id } = req.params;
-  const { nom, quantite, seuil } = req.body;
+  const { nom, quantite, seuil, fournisseur, prixUnitaire } = req.body;
 
   if (!id) {
     return res.status(400).json({ message: "ID is required" });
@@ -138,6 +153,16 @@ async function updateProduit(req, res) {
         .json({ message: "Quantity must be a positive number" });
     } else {
       dataToUpdate.seuil = seuil;
+    }
+  }
+  if (fournisseur) dataToUpdate.fournisseur = fournisseur;
+  if (prixUnitaire) {
+    if (typeof prixUnitaire !== "number" || prixUnitaire <= 0) {
+      return res
+        .status(400)
+        .json({ message: "Price must be a positive number" });
+    } else {
+      dataToUpdate.prixUnitaire = prixUnitaire;
     }
   }
 
@@ -350,16 +375,16 @@ async function assignToTreatment(req, res) {
     if (!produit) {
       return res.status(404).json({ message: "Produit not found" });
     }
-    const soin = await prisma.soinEffectue.findUnique({
-      where: { id: soinId },
+    const soin = await prisma.soin.findUnique({
+      where: { code: soinId },
     });
     if (!soin) {
       return res.status(404).json({ message: "Soin not found" });
     }
     await prisma.produitConsommable_Soin.create({
       data: {
-        produitConsommableId: produitId,
-        soinEffectueId: soinId,
+        produitConsommable: { connect: { id: produitId } },
+        soin: { connect: { code: soinId } },
       },
     });
     return res
@@ -414,26 +439,24 @@ async function removeFromTreatment(req, res) {
     return res.status(400).json({ message: "All fields are required" });
   }
   try {
-    const produit = await prisma.produitConsommable.findUnique({
-      where: { id: produitId },
-    });
-    if (!produit) {
-      return res.status(404).json({ message: "Produit not found" });
-    }
-    const soin = await prisma.soinEffectue.findUnique({
-      where: { id: soinId },
-    });
-    if (!soin) {
-      return res.status(404).json({ message: "Soin not found" });
-    }
     const produitSoin = await prisma.produitConsommable_Soin.findUnique({
-      where: { produitConsommableId: produitId, soinEffectueId: soinId },
+      where: {
+        produitConsommableId_soinId: {
+          produitConsommableId: produitId,
+          soinId: soinId,
+        },
+      },
     });
     if (!produitSoin) {
-      return res.status(404).json({ message: "Produit not found in soin" });
+      return res.status(404).json({ message: "Association not found" });
     }
     await prisma.produitConsommable_Soin.delete({
-      where: { produitConsommableId: produitId, soinEffectueId: soinId },
+      where: {
+        produitConsommableId_soinId: {
+          produitConsommableId: produitId,
+          soinId: soinId,
+        },
+      },
     });
     return res
       .status(200)

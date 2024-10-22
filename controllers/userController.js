@@ -9,68 +9,6 @@ const validator = require("validator");
  *   name: Users
  *   description: API endpoints for Users management
  *
- * /api/v1/users/login:
- *   post:
- *     summary: Login user
- *     tags: [Users]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               email:
- *                 type: string
- *               password:
- *                 type: string
- *     responses:
- *       200:
- *         description: Login successful
- *       400:
- *         description: Bad request
- *       500:
- *         description: Internal server error
- *
- */
-
-async function login(req, res) {
-  const { email, password } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({ message: "Email and password are required" });
-  }
-  try {
-    const user = await prisma.utilisateur.findUnique({
-      where: { email },
-      include: { roles: true },
-    });
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-    const isMatch = await bcrypt.compare(password, user.motDePasse);
-    if (!isMatch) {
-      return res.status(401).json({ message: "Invalid password" });
-    }
-    const token = jwt.sign({ id: user.id }, process.env.SECRET_KEY, {
-      expiresIn: "24h",
-    });
-    const roles = user.roles ? user.roles.map((role) => role.nom) : [];
-
-    res
-      .status(200)
-      .json({ message: "Login successful", token: token, roles: roles });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-}
-
-/**
- * @swagger
- * tags:
- *   name: Users
- *   description: API endpoints for Users management
- *
  * /api/v1/users/add:
  *   post:
  *     summary: Create a new user
@@ -95,6 +33,8 @@ async function login(req, res) {
  *                 type: string
  *               email:
  *                 type: string
+ *               numeroTelephone:
+ *                 type: string
  *               motDePasse:
  *                 type: string
  *               roles:
@@ -111,10 +51,12 @@ async function login(req, res) {
  *
  */
 async function addUser(req, res) {
-  const { nom, prenom, email, motDePasse, roles } = req.body;
-  if (!nom || !prenom || !email || !motDePasse || !roles) {
+  const { nom, prenom, email, numeroTelephone, motDePasse, roles } = req.body;
+
+  if (!nom || !prenom || !email || !numeroTelephone || !motDePasse || !roles) {
     return res.status(400).json({ message: "All fields are required" });
   }
+
   try {
     const existingUser = await prisma.utilisateur.findUnique({
       where: { email },
@@ -133,6 +75,7 @@ async function addUser(req, res) {
         prenom,
         email,
         motDePasse: hashedPassword,
+        numeroTelephone,
         roles: { connect: roles.map((role) => ({ nom: role })) },
       },
       include: { roles: true },
@@ -175,7 +118,12 @@ async function getAllUsers(req, res) {
       skip: (page - 1) * limit,
       take: Number(limit) * 1,
     });
-    res.status(200).json(users);
+    //send users without password
+    const usersWithoutPassword = users.map((user) => {
+      const { motDePasse, ...userWithoutPassword } = user;
+      return userWithoutPassword;
+    });
+    res.status(200).json(usersWithoutPassword);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal server error" });
@@ -224,7 +172,8 @@ async function getUserById(req, res) {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    res.status(200).json(user);
+    const { motDePasse, ...userWithoutPassword } = user;
+    res.status(200).json(userWithoutPassword);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal server error" });
@@ -267,6 +216,8 @@ async function getUserById(req, res) {
  *                 type: string
  *               email:
  *                 type: string
+ *               numeroTelephone:
+ *                 type: string
  *               motDePasse:
  *                 type: string
  *               roles:
@@ -284,7 +235,7 @@ async function getUserById(req, res) {
  */
 async function updateUser(req, res) {
   const { id } = req.params;
-  const { nom, prenom, email, motDePasse, roles } = req.body;
+  const { nom, prenom, email, motDePasse, numeroTelephone, roles } = req.body;
   if (!id) {
     return res.status(400).json({ message: "Id is required" });
   }
@@ -303,6 +254,9 @@ async function updateUser(req, res) {
       prenom: prenom ? prenom : existingUser.prenom,
       email: email ? email : existingUser.email,
       motDePasse: motDePasse ? hashedPassword : existingUser.motDePasse,
+      numeroTelephone: numeroTelephone
+        ? numeroTelephone
+        : existingUser.numeroTelephone,
     };
     if (roles) {
       dataToUpdate.roles = { set: [] };
@@ -373,7 +327,6 @@ async function deleteUser(req, res) {
 }
 
 module.exports = {
-  login,
   addUser,
   getAllUsers,
   getUserById,

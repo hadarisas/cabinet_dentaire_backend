@@ -31,6 +31,10 @@ const validator = require("validator");
  *                 type: string
  *                 format: date
  *                 example: 2021-01-01
+ *               dateDerniereRevision:
+ *                 type: string
+ *                 format: date
+ *                 example: 2021-01-01
  *     responses:
  *       200:
  *         description: Machine added successfully
@@ -41,20 +45,29 @@ const validator = require("validator");
  */
 
 async function addMachine(req, res) {
-  const { nom, modele, dateAchat } = req.body;
+  const { nom, modele, dateAchat, dateDerniereRevision } = req.body;
   try {
-    if (!nom || !modele || !dateAchat) {
+    if (!nom || !modele || !dateAchat || !dateDerniereRevision) {
       return res.status(400).json({ message: "All fields are required" });
     }
-    if (!validator.isDate(dateAchat, { format: "YYYY-MM-DD" })) {
-      return res
-        .status(400)
-        .json({ message: "Invalid date, format must be yyyy-mm-dd" });
+    if (
+      !validator.isDate(dateAchat, { format: "YYYY-MM-DD" }) ||
+      !validator.isDate(dateDerniereRevision, { format: "YYYY-MM-DD" })
+    ) {
+      return res.status(400).json({
+        message: "Invalid date, format must be yyyy-mm-dd",
+      });
     }
     const formattedDateAchat = formatDate(dateAchat);
+    const formattedDateDerniereRevision = formatDate(dateDerniereRevision);
 
     await prisma.machine.create({
-      data: { nom, modele, dateAchat: formattedDateAchat },
+      data: {
+        nom,
+        modele,
+        dateAchat: formattedDateAchat,
+        dateDerniereRevision: formattedDateDerniereRevision,
+      },
     });
     res.status(200).json({ message: "Machine added successfully" });
   } catch (error) {
@@ -130,6 +143,7 @@ async function getMachineById(req, res) {
   try {
     const machine = await prisma.machine.findUnique({
       where: { id },
+      include: { salles: true },
     });
     if (!machine) {
       return res.status(404).json({ message: "Machine not found" });
@@ -175,6 +189,11 @@ async function getMachineById(req, res) {
  *                 type: string
  *                 format: date
  *                 example: 2021-01-01
+ *               dateDerniereRevision:
+ *                 type: string
+ *                 format: date
+ *                 example: 2024-11-20
+ *
  *     responses:
  *       200:
  *         description: Machine updated successfully
@@ -186,13 +205,21 @@ async function getMachineById(req, res) {
 
 async function updateMachine(req, res) {
   const { id } = req.params;
-  const { nom, modele, dateAchat } = req.body;
+  const { nom, modele, dateAchat, dateDerniereRevision } = req.body;
   try {
     if (!id) {
       return res.status(400).json({ message: "Machine ID is required" });
     }
     const dataToUpdate = {};
     if (dateAchat && !validator.isDate(dateAchat, { format: "YYYY-MM-DD" })) {
+      return res
+        .status(400)
+        .json({ message: "Invalid date, format must be yyyy-mm-dd" });
+    }
+    if (
+      dateDerniereRevision &&
+      !validator.isDate(dateDerniereRevision, { format: "YYYY-MM-DD" })
+    ) {
       return res
         .status(400)
         .json({ message: "Invalid date, format must be yyyy-mm-dd" });
@@ -209,6 +236,10 @@ async function updateMachine(req, res) {
     if (dateAchat) {
       const formattedDateAchat = formatDate(dateAchat);
       dataToUpdate.dateAchat = formattedDateAchat;
+    }
+    if (dateDerniereRevision) {
+      const formattedDateDerniereRevision = formatDate(dateDerniereRevision);
+      dataToUpdate.dateDerniereRevision = formattedDateDerniereRevision;
     }
     await prisma.machine.update({
       where: { id },
@@ -271,10 +302,80 @@ async function deleteMachine(req, res) {
   }
 }
 
+/**
+ *
+ * @swagger
+ * /api/v1/machines/assign-to-salle:
+ *   post:
+ *     summary: Assign a machine to a Consultation Room
+ *     description: Assigne a machine to a Consultation Room
+ *     tags: [Machines]
+ *     parameters:
+ *       - in: header
+ *         name: x-access-token
+ *         required: true
+ *         description: The access token for authentication
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               machineId:
+ *                 type: string
+ *               salleId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Machine assigned to salle successfully
+ *       400:
+ *         description: Bad request
+ *       500:
+ *         description: Internal server error
+ */
+
+async function assignMachineToSalle(req, res) {
+  const { machineId, salleId } = req.body;
+  if (!machineId || !salleId) {
+    return res
+      .status(400)
+      .json({ message: "Machine ID and salle ID are required" });
+  }
+  try {
+    const machine = await prisma.machine.findUnique({
+      where: { id: machineId },
+    });
+    const salle = await prisma.salleConsultation.findUnique({
+      where: { id: salleId },
+    });
+    if (!machine) {
+      return res.status(404).json({ message: "Machine not found" });
+    }
+    if (!salle) {
+      return res.status(404).json({ message: "Salle not found" });
+    }
+    console.log(`machineId: ${machineId}, salleId: ${salleId}`);
+    await prisma.machine_SalleConsultation.create({
+      data: {
+        machine: { connect: { id: machineId } },
+        salleConsultation: { connect: { id: salleId } },
+      },
+    });
+    res.status(200).json({ message: "Machine assigned to salle successfully" });
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
 module.exports = {
   addMachine,
   getMachines,
   updateMachine,
   deleteMachine,
   getMachineById,
+  assignMachineToSalle,
 };

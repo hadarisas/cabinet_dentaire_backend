@@ -1,4 +1,3 @@
-const express = require("express");
 const router = require("express").Router();
 const authJwt = require("../middlewares/auth");
 
@@ -8,19 +7,13 @@ const {
   getPatientById,
   deletePatient,
   updatePatient,
-  getDossierMedical,
 } = require("../controllers/patientController");
 
 router.use(authJwt.verifyToken);
-router.post("/add", authJwt.isAssistant || authJwt.isAdmin, addPatient);
-router.get("/all", authJwt.isAssistant || authJwt.isAdmin, getAllPatients);
-router.get("/:id", authJwt.isAssistant || authJwt.isAdmin, getPatientById);
-router.delete("/:id", authJwt.isAssistant || authJwt.isAdmin, deletePatient);
-router.put("/:id", authJwt.isAssistant || authJwt.isAdmin, updatePatient);
-router.get(
-  "/:id/dossier-medical",
-  authJwt.isAssistant || authJwt.isAdmin,
-  getDossierMedical
-);
+router.post("/add", authJwt.isDentistOrAssistant, addPatient);
+router.get("/all", authJwt.isDentistOrAssistant, getAllPatients);
+router.get("/:id", authJwt.isDentistOrAssistant, getPatientById);
+router.delete("/:id", authJwt.isDentistOrAssistant, deletePatient);
+router.put("/:id", authJwt.isDentistOrAssistant, updatePatient);
 
 module.exports = router;

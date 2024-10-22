@@ -31,7 +31,7 @@ const validator = require("validator");
  *               date:
  *                 type: string
  *                 format: date
- *                 example: "2024/01/01"
+ *                 example: "2024-01-01"
  *               duree:
  *                 type: integer
  *                 minimum: 1
@@ -45,6 +45,10 @@ const validator = require("validator");
  *                 type: string
  *               utilisateurId:
  *                 type: string
+ *               motif:
+ *                 type: string
+ *               notes:
+ *                 type: string
  *     responses:
  *       200:
  *         description: Rendez-vous added successfully
@@ -53,22 +57,32 @@ const validator = require("validator");
  */
 
 async function addAppointment(req, res) {
-  const { date, duree, time, patientId, salleConsultationId, utilisateurId } =
-    req.body;
+  const {
+    date,
+    time,
+    duree,
+    patientId,
+    salleConsultationId,
+    utilisateurId,
+    motif,
+    notes,
+  } = req.body;
   if (
     !date ||
     !duree ||
     !time ||
     !patientId ||
     !salleConsultationId ||
-    !utilisateurId
+    !utilisateurId ||
+    !motif ||
+    !notes
   ) {
     return res.status(400).json({ message: "All fields are required" });
   }
-  if (!validator.isDate(date, { format: "YYYY/MM/DD" })) {
+  if (!validator.isDate(date, { format: "YYYY-MM-DD" })) {
     return res
       .status(400)
-      .json({ message: "Invalid date, format must be yyyy/mm/dd" });
+      .json({ message: "Invalid date, format must be yyyy-mm-dd" });
   }
 
   const [hours, minutes] = time.split(":");
@@ -79,7 +93,7 @@ async function addAppointment(req, res) {
   }
   const dateAndTime = formatDateAndTime(date, time);
 
-  if (dateAndTime < new Date()) {
+  if (dateAndTime < new Date().toISOString()) {
     return res.status(400).json({ message: "Date cannot be in the past" });
   }
   const endDate = new Date(dateAndTime);
@@ -122,6 +136,9 @@ async function addAppointment(req, res) {
         patientId,
         salleConsultationId,
         utilisateurId,
+        motif,
+        notes,
+        status: "confirmed",
       },
     });
     return res
@@ -163,7 +180,7 @@ async function addAppointment(req, res) {
  *               date:
  *                 type: string
  *                 format: date
- *                 example: "2024/01/01"
+ *                 example: "2024-01-01"
  *               time:
  *                 type: string
  *                 example: "10:00"
@@ -176,6 +193,10 @@ async function addAppointment(req, res) {
  *               salleConsultationId:
  *                 type: string
  *               utilisateurId:
+ *                 type: string
+ *               motif:
+ *                 type: string
+ *               notes:
  *                 type: string
  *     responses:
  *       200:
@@ -202,10 +223,10 @@ async function updateAppointment(req, res) {
     const dataToUpdate = {};
     let newStartDate, newEndDate;
     if (req.body.date && req.body.time) {
-      if (!validator.isDate(req.body.date, { format: "YYYY/MM/DD" })) {
+      if (!validator.isDate(req.body.date, { format: "YYYY-MM-DD" })) {
         return res
           .status(400)
-          .json({ message: "Invalid date, format must be yyyy/mm/dd" });
+          .json({ message: "Invalid date, format must be yyyy-mm-dd" });
       }
       const [hours, minutes] = req.body.time.split(":");
       if (!hours || !minutes) {
@@ -232,6 +253,9 @@ async function updateAppointment(req, res) {
       dataToUpdate.salleConsultationId = req.body.salleConsultationId;
     if (req.body.utilisateurId)
       dataToUpdate.utilisateurId = req.body.utilisateurId;
+
+    if (req.body.motif) dataToUpdate.motif = req.body.motif;
+    if (req.body.notes) dataToUpdate.notes = req.body.notes;
 
     // Check for conflicting appointments
     const conflictingAppointments = await prisma.rendezVous.findMany({
@@ -315,7 +339,10 @@ async function cancelAppointment(req, res) {
     if (!existingAppointment) {
       return res.status(404).json({ message: "Appointment not found" });
     }
-    await prisma.rendezVous.delete({ where: { id } });
+    await prisma.rendezVous.update({
+      where: { id },
+      data: { status: "canceled" },
+    });
     return res.status(200).json({ message: "Appointment cancelled" });
   } catch (error) {
     console.error(error.message);
@@ -379,7 +406,8 @@ async function getAppointmentsByPatientId(req, res) {
 
   try {
     const appointments = await prisma.rendezVous.findMany({
-      where: { patientId },
+      where: { patientId, status: "confirmed" },
+      orderBy: { startDate: "desc" },
       skip: (page - 1) * size,
       take: Number(size) * 1,
       include: {
@@ -412,6 +440,8 @@ async function getAppointmentsByPatientId(req, res) {
       salleConsultationNumero: appointment.salleConsultation.numero,
       dentistId: appointment.utilisateurId,
       dentistName: `${appointment.utilisateur.nom} ${appointment.utilisateur.prenom}`,
+      motif: appointment.motif,
+      notes: appointment.notes,
     }));
 
     return res.status(200).json(response);
@@ -475,7 +505,8 @@ async function getAppoitmentsByUserId(req, res) {
   }
   try {
     const appointments = await prisma.rendezVous.findMany({
-      where: { utilisateurId: userId },
+      orderBy: { startDate: "desc" },
+      where: { utilisateurId: userId, status: "confirmed" },
       skip: (page - 1) * size,
       take: Number(size) * 1,
       include: {
@@ -508,6 +539,8 @@ async function getAppoitmentsByUserId(req, res) {
       salleConsultationNumero: appointment.salleConsultation.numero,
       dentistId: appointment.utilisateurId,
       dentistName: `${appointment.utilisateur.nom} ${appointment.utilisateur.prenom}`,
+      motif: appointment.motif,
+      notes: appointment.notes,
     }));
     return res.status(200).json(response);
   } catch (error) {
@@ -584,6 +617,8 @@ async function getAppointmentById(req, res) {
       salleConsultationNumero: appointment.salleConsultation.numero,
       dentistId: appointment.utilisateurId,
       dentistName: `${appointment.utilisateur.nom} ${appointment.utilisateur.prenom}`,
+      motif: appointment.motif,
+      notes: appointment.notes,
     };
     return res.status(200).json(response);
   } catch (error) {
@@ -635,7 +670,9 @@ async function getAppointmentById(req, res) {
 async function getAllAppointments(req, res) {
   const { size = 10, page = 1 } = req.query;
   try {
+    //order by startDate
     const appointments = await prisma.rendezVous.findMany({
+      orderBy: { startDate: "desc" },
       skip: (page - 1) * size,
       take: Number(size),
       include: {
@@ -668,6 +705,95 @@ async function getAllAppointments(req, res) {
       salleConsultationNumero: appointment.salleConsultation.numero,
       dentistId: appointment.utilisateurId,
       dentistName: `${appointment.utilisateur.nom} ${appointment.utilisateur.prenom}`,
+      motif: appointment.motif,
+      notes: appointment.notes,
+    }));
+    return res.status(200).json(response);
+  } catch (error) {
+    console.error(error.message);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+/**
+ * @swagger
+ * /api/v1/rendez-vous/active:
+ *   get:
+ *     summary: Get all active rendez-vous
+ *     description: Retrieve all active rendez-vous
+ *     tags: [Rendez-vous]
+ *     parameters:
+ *       - in: header
+ *         name: x-access-token
+ *         required: true
+ *         description: The access token for authentication
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: size
+ *         required: false
+ *         description: Number of rendez-vous to retrieve per page
+ *         schema:
+ *           type: number
+ *           minimum: 1
+ *           example: 10
+ *       - in: query
+ *         name: page
+ *         required: false
+ *         description: Page number to retrieve
+ *         schema:
+ *           type: number
+ *           minimum: 1
+ *           example: 1
+ *     responses:
+ *       200:
+ *         description: Rendez-vous retrieved successfully
+ *       400:
+ *         description: Bad request
+ *       404:
+ *         description: Rendez-vous not found
+ *       500:
+ *         description: Internal server error
+ */
+async function getAllActiveAppointments(req, res) {
+  const { size = 10, page = 1 } = req.query;
+  try {
+    const appointments = await prisma.rendezVous.findMany({
+      where: { status: "confirmed" },
+      skip: (page - 1) * size,
+      take: Number(size),
+      include: {
+        patient: {
+          select: {
+            nom: true,
+            prenom: true,
+          },
+        },
+        utilisateur: {
+          select: {
+            nom: true,
+            prenom: true,
+          },
+        },
+        salleConsultation: {
+          select: {
+            numero: true,
+          },
+        },
+      },
+    });
+    const response = appointments.map((appointment) => ({
+      id: appointment.id,
+      startDate: appointment.startDate,
+      endDate: appointment.endDate,
+      patientId: appointment.patientId,
+      patientName: `${appointment.patient.nom} ${appointment.patient.prenom}`,
+      salleConsultationId: appointment.salleConsultationId,
+      salleConsultationNumero: appointment.salleConsultation.numero,
+      dentistId: appointment.utilisateurId,
+      dentistName: `${appointment.utilisateur.nom} ${appointment.utilisateur.prenom}`,
+      motif: appointment.motif,
+      notes: appointment.notes,
     }));
     return res.status(200).json(response);
   } catch (error) {
@@ -684,4 +810,5 @@ module.exports = {
   getAppointmentById,
   getAppoitmentsByUserId,
   getAllAppointments,
+  getAllActiveAppointments,
 };
