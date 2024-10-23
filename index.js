@@ -8,6 +8,10 @@ const rendezVousRoutes = require("./routes/rendezVousRoutes");
 const salleConsultationRoutes = require("./routes/salleConsultationRoutes");
 const authRoutes = require("./routes/authRoutes");
 const documentRoutes = require("./routes/documentRoutes");
+const soinRoutes = require("./routes/soinRoutes");
+const soinEffectueRoutes = require("./routes/soinEffectueRoutes");
+const factureRoutes = require("./routes/factureRoutes");
+const factureSoinRoutes = require("./routes/factureSoinRoutes");
 
 const setupSwagger = require("./swagger");
 
@@ -27,6 +31,11 @@ app.use("/api/v1/rendez-vous", rendezVousRoutes);
 app.use("/api/v1/salle-consultation", salleConsultationRoutes);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/documents", documentRoutes);
+app.use("/api/v1/soins", soinRoutes);
+app.use("/api/v1/soins-effectues", soinEffectueRoutes);
+app.use("/api/v1/factures", factureRoutes);
+app.use("/api/v1/factures-soin", factureSoinRoutes);
+
 app.get("/", (req, res) => {
   res.send(`Server running at port ${port}`);
 });

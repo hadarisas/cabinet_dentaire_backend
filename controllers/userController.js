@@ -47,14 +47,17 @@ const validator = require("validator");
  *       400:
  *         description: Bad request
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  *
  */
 async function addUser(req, res) {
   const { nom, prenom, email, numeroTelephone, motDePasse, roles } = req.body;
 
   if (!nom || !prenom || !email || !numeroTelephone || !motDePasse || !roles) {
-    return res.status(400).json({ message: "All fields are required" });
+    return res.status(400).json({
+      success: false,
+      error: "All fields are required",
+    });
   }
 
   try {
@@ -62,11 +65,17 @@ async function addUser(req, res) {
       where: { email },
     });
     if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
+      return res.status(400).json({
+        success: false,
+        error: "User already exists",
+      });
     }
 
     if (!validator.isEmail(email)) {
-      return res.status(400).json({ message: "Invalid email" });
+      return res.status(400).json({
+        success: false,
+        error: "Invalid email",
+      });
     }
     const hashedPassword = await bcrypt.hash(motDePasse, 10);
     const user = await prisma.utilisateur.create({
@@ -80,10 +89,16 @@ async function addUser(req, res) {
       },
       include: { roles: true },
     });
-    res.status(201).json({ message: "User created successfully" });
+    res.status(201).json({
+      success: true,
+      message: "User created successfully",
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 
@@ -108,7 +123,7 @@ async function addUser(req, res) {
  *       200:
  *         description: Users fetched successfully
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  *
  */
 async function getAllUsers(req, res) {
@@ -123,10 +138,16 @@ async function getAllUsers(req, res) {
       const { motDePasse, ...userWithoutPassword } = user;
       return userWithoutPassword;
     });
-    res.status(200).json(usersWithoutPassword);
+    res.status(200).json({
+      success: true,
+      data: usersWithoutPassword,
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 
@@ -159,24 +180,36 @@ async function getAllUsers(req, res) {
  *       400:
  *         description: Bad request
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  *
  */
 async function getUserById(req, res) {
   const { id } = req.params;
   if (!id) {
-    return res.status(400).json({ message: "Id is required" });
+    return res.status(400).json({
+      success: false,
+      error: "Id is required",
+    });
   }
   try {
     const user = await prisma.utilisateur.findUnique({ where: { id } });
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({
+        success: false,
+        error: "User not found",
+      });
     }
     const { motDePasse, ...userWithoutPassword } = user;
-    res.status(200).json(userWithoutPassword);
+    res.status(200).json({
+      success: true,
+      data: userWithoutPassword,
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 
@@ -230,21 +263,27 @@ async function getUserById(req, res) {
  *       400:
  *         description: Bad request
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  *
  */
 async function updateUser(req, res) {
   const { id } = req.params;
   const { nom, prenom, email, motDePasse, numeroTelephone, roles } = req.body;
   if (!id) {
-    return res.status(400).json({ message: "Id is required" });
+    return res.status(400).json({
+      success: false,
+      error: "Id is required",
+    });
   }
   try {
     const existingUser = await prisma.utilisateur.findUnique({
       where: { id },
     });
     if (!existingUser) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({
+        success: false,
+        error: "User not found",
+      });
     }
     if (motDePasse) {
       hashedPassword = await bcrypt.hash(motDePasse, 10);
@@ -267,10 +306,16 @@ async function updateUser(req, res) {
       data: dataToUpdate,
       include: { roles: true },
     });
-    res.status(200).json({ message: "User updated successfully" });
+    res.status(200).json({
+      success: true,
+      message: "User updated successfully",
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 
@@ -303,26 +348,38 @@ async function updateUser(req, res) {
  *       400:
  *         description: Bad request
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  *
  */
 async function deleteUser(req, res) {
   const { id } = req.params;
   if (!id) {
-    return res.status(400).json({ message: "Id is required" });
+    return res.status(400).json({
+      success: false,
+      error: "Id is required",
+    });
   }
   try {
     const existingUser = await prisma.utilisateur.findUnique({
       where: { id },
     });
     if (!existingUser) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({
+        success: false,
+        error: "User not found",
+      });
     }
     await prisma.utilisateur.delete({ where: { id } });
-    res.status(200).json({ message: "User deleted successfully" });
+    res.status(200).json({
+      success: true,
+      message: "User deleted successfully",
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 

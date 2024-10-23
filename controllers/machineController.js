@@ -41,21 +41,25 @@ const validator = require("validator");
  *       400:
  *         description: Bad request
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  */
 
 async function addMachine(req, res) {
   const { nom, modele, dateAchat, dateDerniereRevision } = req.body;
   try {
     if (!nom || !modele || !dateAchat || !dateDerniereRevision) {
-      return res.status(400).json({ message: "All fields are required" });
+      return res.status(400).json({
+        success: false,
+        error: "All fields are required",
+      });
     }
     if (
       !validator.isDate(dateAchat, { format: "YYYY-MM-DD" }) ||
       !validator.isDate(dateDerniereRevision, { format: "YYYY-MM-DD" })
     ) {
       return res.status(400).json({
-        message: "Invalid date, format must be yyyy-mm-dd",
+        success: false,
+        error: "Invalid date, format must be yyyy-mm-dd",
       });
     }
     const formattedDateAchat = formatDate(dateAchat);
@@ -69,10 +73,16 @@ async function addMachine(req, res) {
         dateDerniereRevision: formattedDateDerniereRevision,
       },
     });
-    res.status(200).json({ message: "Machine added successfully" });
+    res.status(200).json({
+      success: true,
+      message: "Machine added successfully",
+    });
   } catch (error) {
     console.log(error.message);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 
@@ -94,7 +104,7 @@ async function addMachine(req, res) {
  *       200:
  *         description: Machines fetched successfully
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  */
 async function getMachines(req, res) {
   try {
@@ -103,10 +113,16 @@ async function getMachines(req, res) {
       skip: (page - 1) * limit,
       take: Number(limit) * 1,
     });
-    res.status(200).json(machines);
+    res.status(200).json({
+      success: true,
+      data: machines,
+    });
   } catch (error) {
     console.log(error.message);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 
@@ -136,7 +152,7 @@ async function getMachines(req, res) {
  *       404:
  *         description: Machine not found
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  */
 async function getMachineById(req, res) {
   const { id } = req.params;
@@ -146,12 +162,21 @@ async function getMachineById(req, res) {
       include: { salles: true },
     });
     if (!machine) {
-      return res.status(404).json({ message: "Machine not found" });
+      return res.status(404).json({
+        success: false,
+        error: "Machine not found",
+      });
     }
-    res.status(200).json(machine);
+    res.status(200).json({
+      success: true,
+      data: machine,
+    });
   } catch (error) {
     console.log(error.message);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 /**
@@ -200,7 +225,7 @@ async function getMachineById(req, res) {
  *       404:
  *         description: Machine not found
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  */
 
 async function updateMachine(req, res) {
@@ -208,27 +233,35 @@ async function updateMachine(req, res) {
   const { nom, modele, dateAchat, dateDerniereRevision } = req.body;
   try {
     if (!id) {
-      return res.status(400).json({ message: "Machine ID is required" });
+      return res.status(400).json({
+        success: false,
+        error: "Machine ID is required",
+      });
     }
     const dataToUpdate = {};
     if (dateAchat && !validator.isDate(dateAchat, { format: "YYYY-MM-DD" })) {
-      return res
-        .status(400)
-        .json({ message: "Invalid date, format must be yyyy-mm-dd" });
+      return res.status(400).json({
+        success: false,
+        error: "Invalid date, format must be yyyy-mm-dd",
+      });
     }
     if (
       dateDerniereRevision &&
       !validator.isDate(dateDerniereRevision, { format: "YYYY-MM-DD" })
     ) {
-      return res
-        .status(400)
-        .json({ message: "Invalid date, format must be yyyy-mm-dd" });
+      return res.status(400).json({
+        success: false,
+        error: "Invalid date, format must be yyyy-mm-dd",
+      });
     }
     const existingMachine = await prisma.machine.findUnique({
       where: { id },
     });
     if (!existingMachine) {
-      return res.status(404).json({ message: "Machine not found" });
+      return res.status(404).json({
+        success: false,
+        error: "Machine not found",
+      });
     }
 
     if (nom) dataToUpdate.nom = nom;
@@ -245,10 +278,16 @@ async function updateMachine(req, res) {
       where: { id },
       data: dataToUpdate,
     });
-    res.status(200).json({ message: "Machine updated successfully" });
+    res.status(200).json({
+      success: true,
+      message: "Machine updated successfully",
+    });
   } catch (error) {
     console.log(error.message);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 
@@ -278,27 +317,39 @@ async function updateMachine(req, res) {
  *       404:
  *         description: Machine not found
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  */
 async function deleteMachine(req, res) {
   const { id } = req.params;
   try {
     if (!id) {
-      return res.status(400).json({ message: "Machine ID is required" });
+      return res.status(400).json({
+        success: false,
+        error: "Machine ID is required",
+      });
     }
     const existingMachine = await prisma.machine.findUnique({
       where: { id },
     });
     if (!existingMachine) {
-      return res.status(404).json({ message: "Machine not found" });
+      return res.status(404).json({
+        success: false,
+        error: "Machine not found",
+      });
     }
     await prisma.machine.delete({
       where: { id },
     });
-    res.status(200).json({ message: "Machine deleted successfully" });
+    res.status(200).json({
+      success: true,
+      message: "Machine deleted successfully",
+    });
   } catch (error) {
     console.log(error.message);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 
@@ -334,15 +385,16 @@ async function deleteMachine(req, res) {
  *       400:
  *         description: Bad request
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  */
 
 async function assignMachineToSalle(req, res) {
   const { machineId, salleId } = req.body;
   if (!machineId || !salleId) {
-    return res
-      .status(400)
-      .json({ message: "Machine ID and salle ID are required" });
+    return res.status(400).json({
+      success: false,
+      error: "Machine ID and salle ID are required",
+    });
   }
   try {
     const machine = await prisma.machine.findUnique({
@@ -352,10 +404,16 @@ async function assignMachineToSalle(req, res) {
       where: { id: salleId },
     });
     if (!machine) {
-      return res.status(404).json({ message: "Machine not found" });
+      return res.status(404).json({
+        success: false,
+        error: "Machine not found",
+      });
     }
     if (!salle) {
-      return res.status(404).json({ message: "Salle not found" });
+      return res.status(404).json({
+        success: false,
+        error: "Salle not found",
+      });
     }
     console.log(`machineId: ${machineId}, salleId: ${salleId}`);
     await prisma.machine_SalleConsultation.create({
@@ -364,10 +422,16 @@ async function assignMachineToSalle(req, res) {
         salleConsultation: { connect: { id: salleId } },
       },
     });
-    res.status(200).json({ message: "Machine assigned to salle successfully" });
+    res.status(200).json({
+      success: true,
+      message: "Machine assigned to salle successfully",
+    });
   } catch (error) {
     console.log(error.message);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 

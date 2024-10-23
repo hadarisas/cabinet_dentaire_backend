@@ -29,14 +29,17 @@ const bcrypt = require("bcrypt");
  *       400:
  *         description: Bad request
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  *
  */
 
 async function login(req, res) {
   const { email, password } = req.body;
   if (!email || !password) {
-    return res.status(400).json({ message: "Email and password are required" });
+    return res.status(400).json({
+      success: false,
+      error: "Email and password are required",
+    });
   }
   try {
     const user = await prisma.utilisateur.findUnique({
@@ -44,11 +47,17 @@ async function login(req, res) {
       include: { roles: true },
     });
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({
+        success: false,
+        error: "User not found",
+      });
     }
     const isMatch = await bcrypt.compare(password, user.motDePasse);
     if (!isMatch) {
-      return res.status(401).json({ message: "Invalid password" });
+      return res.status(401).json({
+        success: false,
+        error: "Invalid password",
+      });
     }
     const token = jwt.sign({ id: user.id }, process.env.SECRET_KEY, {
       expiresIn: "24h",
@@ -64,10 +73,16 @@ async function login(req, res) {
       email: user.email,
       numeroTelephone: user.numeroTelephone,
     };
-    res.status(200).json(dataToSend);
+    res.status(200).json({
+      success: true,
+      data: dataToSend,
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 

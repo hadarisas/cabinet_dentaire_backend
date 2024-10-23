@@ -46,32 +46,48 @@ const prisma = require("../config/prisma");
  *       400:
  *         description: Bad request
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  */
 async function addProduit(req, res) {
   const { nom, quantite, seuil, fournisseur, prixUnitaire } = req.body;
 
   if (!nom || !quantite || !seuil || !fournisseur || !prixUnitaire) {
-    return res.status(400).json({ message: "All fields are required" });
+    return res.status(400).json({
+      success: false,
+      error: "All fields are required",
+    });
   }
   if (typeof quantite !== "number" || quantite <= 0) {
-    return res
-      .status(400)
-      .json({ message: "Quantity must be a positive number" });
+    return res.status(400).json({
+      success: false,
+      error: "Quantity must be a positive number",
+    });
   }
   if (typeof seuil !== "number" || seuil <= 0) {
-    return res.status(400).json({ message: "Seuil must be a positive number" });
+    return res.status(400).json({
+      success: false,
+      error: "Seuil must be a positive number",
+    });
   }
   if (typeof prixUnitaire !== "number" || prixUnitaire <= 0) {
-    return res.status(400).json({ message: "Price must be a positive number" });
+    return res.status(400).json({
+      success: false,
+      error: "Price must be a positive number",
+    });
   }
 
   try {
     await prisma.produitConsommable.create({ data: req.body });
-    return res.status(200).json({ message: "Produit added successfully" });
+    return res.status(200).json({
+      success: true,
+      message: "Produit added successfully",
+    });
   } catch (error) {
     console.log(error.message);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 
@@ -125,32 +141,37 @@ async function addProduit(req, res) {
  *       404:
  *         description: Produit not found
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  */
 async function updateProduit(req, res) {
   const { id } = req.params;
   const { nom, quantite, seuil, fournisseur, prixUnitaire } = req.body;
 
   if (!id) {
-    return res.status(400).json({ message: "ID is required" });
+    return res.status(400).json({
+      success: false,
+      error: "ID is required",
+    });
   }
   const dataToUpdate = {};
 
   if (nom) dataToUpdate.nom = nom;
   if (quantite) {
     if (typeof quantite !== "number" || quantite <= 0) {
-      return res
-        .status(400)
-        .json({ message: "Quantity must be a positive number" });
+      return res.status(400).json({
+        success: false,
+        error: "Quantity must be a positive number",
+      });
     } else {
       dataToUpdate.quantite = quantite;
     }
   }
   if (seuil) {
     if (typeof seuil !== "number" || seuil <= 0) {
-      return res
-        .status(400)
-        .json({ message: "Quantity must be a positive number" });
+      return res.status(400).json({
+        success: false,
+        error: "Seuil must be a positive number",
+      });
     } else {
       dataToUpdate.seuil = seuil;
     }
@@ -158,9 +179,10 @@ async function updateProduit(req, res) {
   if (fournisseur) dataToUpdate.fournisseur = fournisseur;
   if (prixUnitaire) {
     if (typeof prixUnitaire !== "number" || prixUnitaire <= 0) {
-      return res
-        .status(400)
-        .json({ message: "Price must be a positive number" });
+      return res.status(400).json({
+        success: false,
+        error: "Price must be a positive number",
+      });
     } else {
       dataToUpdate.prixUnitaire = prixUnitaire;
     }
@@ -171,16 +193,25 @@ async function updateProduit(req, res) {
       where: { id },
     });
     if (!produit) {
-      return res.status(404).json({ message: "Produit not found" });
+      return res.status(404).json({
+        success: false,
+        error: "Produit not found",
+      });
     }
     await prisma.produitConsommable.update({
       where: { id },
       data: dataToUpdate,
     });
-    return res.status(200).json({ message: "Produit updated successfully" });
+    return res.status(200).json({
+      success: true,
+      message: "Produit updated successfully",
+    });
   } catch (error) {
     console.log(error.message);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 
@@ -212,26 +243,38 @@ async function updateProduit(req, res) {
  *       404:
  *         description: Produit not found
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  */
 async function deleteProduit(req, res) {
   const { id } = req.params;
   if (!id) {
-    return res.status(400).json({ message: "ID is required" });
+    return res.status(400).json({
+      success: false,
+      error: "ID is required",
+    });
   }
   try {
     const produit = await prisma.produitConsommable.findUnique({
       where: { id },
     });
     if (!produit) {
-      return res.status(404).json({ message: "Produit not found" });
+      return res.status(404).json({
+        success: false,
+        error: "Produit not found",
+      });
     }
 
     await prisma.produitConsommable.delete({ where: { id } });
-    return res.status(200).json({ message: "Produit deleted successfully" });
+    return res.status(200).json({
+      success: true,
+      message: "Produit deleted successfully",
+    });
   } catch (error) {
     console.log(error.message);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 
@@ -259,7 +302,7 @@ async function deleteProduit(req, res) {
  *               items:
  *                 $ref: '#/components/schemas/ProduitConsommable'
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  */
 async function getAllProduits(req, res) {
   try {
@@ -268,10 +311,16 @@ async function getAllProduits(req, res) {
       skip: (page - 1) * limit,
       take: Number(limit) * 1,
     });
-    return res.status(200).json(produits);
+    return res.status(200).json({
+      success: true,
+      data: produits,
+    });
   } catch (error) {
     console.log(error.message);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 
@@ -307,23 +356,33 @@ async function getAllProduits(req, res) {
  *       404:
  *         description: Produit not found
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  */
 async function getProduitById(req, res) {
   const { id } = req.params;
   if (!id) {
-    return res.status(400).json({ message: "ID is required" });
+    return res.status(400).json({
+      success: false,
+      error: "ID is required",
+    });
   }
   try {
     const produit = await prisma.produitConsommable.findUnique({
       where: { id },
     });
-    return res.status(200).json(produit);
+    return res.status(200).json({
+      success: true,
+      data: produit,
+    });
   } catch (error) {
     console.log(error.message);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
+
 /**
  * @swagger
  * /api/v1/produits/assign-to-treatment:
@@ -349,50 +408,63 @@ async function getProduitById(req, res) {
  *               produitId:
  *                 type: string
  *                 description: ID of the produit to assign.
- *               soinId:
+ *               soinEffectueId:
  *                 type: string
- *                 description: ID of the soin to assign the produit to.
+ *                 description: ID of the soin effectue to assign the produit to.
  *     responses:
  *       200:
- *         description: Produit assigned to soin successfully
+ *         description: Produit assigned to soin effectue successfully
  *       400:
  *         description: Bad request
  *       404:
  *         description: Produit or soin not found
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  */
 
 async function assignToTreatment(req, res) {
-  const { produitId, soinId } = req.body;
-  if (!produitId || !soinId) {
-    return res.status(400).json({ message: "All fields are required" });
+  const { produitId, soinEffectueId } = req.body;
+  if (!produitId || !soinEffectueId) {
+    return res.status(400).json({
+      success: false,
+      error: "All fields are required",
+    });
   }
   try {
     const produit = await prisma.produitConsommable.findUnique({
       where: { id: produitId },
     });
     if (!produit) {
-      return res.status(404).json({ message: "Produit not found" });
+      return res.status(404).json({
+        success: false,
+        error: "Produit not found",
+      });
     }
-    const soin = await prisma.soin.findUnique({
-      where: { code: soinId },
+    const soinEffectue = await prisma.soinEffectue.findUnique({
+      where: { id: soinEffectueId },
     });
-    if (!soin) {
-      return res.status(404).json({ message: "Soin not found" });
+    if (!soinEffectue) {
+      return res.status(404).json({
+        success: false,
+        error: "Soin effectue not found",
+      });
     }
     await prisma.produitConsommable_Soin.create({
       data: {
         produitConsommable: { connect: { id: produitId } },
-        soin: { connect: { code: soinId } },
+        soinEffectue: { connect: { id: soinEffectueId } },
       },
     });
-    return res
-      .status(200)
-      .json({ message: "Produit assigned to soin successfully" });
+    return res.status(200).json({
+      success: true,
+      message: "Produit assigned to soin effectue successfully",
+    });
   } catch (error) {
     console.log(error.message);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 /**
@@ -420,9 +492,9 @@ async function assignToTreatment(req, res) {
  *               produitId:
  *                 type: string
  *                 description: ID of the produit to remove.
- *               soinId:
+ *               soinEffectueId:
  *                 type: string
- *                 description: ID of the soin to remove the produit from.
+ *                 description: ID of the soin effectue to remove the produit from.
  *     responses:
  *       200:
  *         description: Produit removed from soin successfully
@@ -431,39 +503,49 @@ async function assignToTreatment(req, res) {
  *       404:
  *         description: Produit or soin not found
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  */
 async function removeFromTreatment(req, res) {
-  const { produitId, soinId } = req.body;
-  if (!produitId || !soinId) {
-    return res.status(400).json({ message: "All fields are required" });
+  const { produitId, soinEffectueId } = req.body;
+  if (!produitId || !soinEffectueId) {
+    return res.status(400).json({
+      success: false,
+      error: "All fields are required",
+    });
   }
   try {
     const produitSoin = await prisma.produitConsommable_Soin.findUnique({
       where: {
         produitConsommableId_soinId: {
           produitConsommableId: produitId,
-          soinId: soinId,
+          soinEffectueId: soinEffectueId,
         },
       },
     });
     if (!produitSoin) {
-      return res.status(404).json({ message: "Association not found" });
+      return res.status(404).json({
+        success: false,
+        error: "Association not found",
+      });
     }
     await prisma.produitConsommable_Soin.delete({
       where: {
-        produitConsommableId_soinId: {
+        produitConsommableId_soinEffectueId: {
           produitConsommableId: produitId,
-          soinId: soinId,
+          soinEffectueId: soinEffectueId,
         },
       },
     });
-    return res
-      .status(200)
-      .json({ message: "Produit removed from soin successfully" });
+    return res.status(200).json({
+      success: true,
+      message: "Produit removed from soin effectue successfully",
+    });
   } catch (error) {
     console.log(error.message);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 

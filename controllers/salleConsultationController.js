@@ -34,14 +34,17 @@ const prisma = require("../config/prisma");
  *       400:
  *         description: Bad request
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  */
 
 async function addSalleConsultation(req, res) {
   const { numero, disponibilite = true } = req.body;
   try {
     if (!numero) {
-      return res.status(400).json({ message: "All fields are required" });
+      return res.status(400).json({
+        success: false,
+        error: "All fields are required",
+      });
     }
     await prisma.salleConsultation.create({
       data: { numero, disponibilite },
@@ -49,12 +52,16 @@ async function addSalleConsultation(req, res) {
         machines: true,
       },
     });
-    return res
-      .status(201)
-      .json({ message: "Salle consultation created successfully" });
+    return res.status(201).json({
+      success: true,
+      message: "Salle consultation created successfully",
+    });
   } catch (error) {
     console.error(error.message);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 
@@ -91,7 +98,7 @@ async function addSalleConsultation(req, res) {
  *       200:
  *         description: List of salle consultations
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  */
 async function getSallesConsultation(req, res) {
   try {
@@ -100,10 +107,16 @@ async function getSallesConsultation(req, res) {
       skip: (page - 1) * limit,
       take: Number(limit) * 1,
     });
-    return res.status(200).json(sallesConsultation);
+    return res.status(200).json({
+      success: true,
+      data: sallesConsultation,
+    });
   } catch (error) {
     console.error(error.message);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 
@@ -143,7 +156,7 @@ async function getSallesConsultation(req, res) {
  *       404:
  *         description: Salle consultation not found
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  */
 async function updateSalleConsultation(req, res) {
   const { id } = req.params;
@@ -155,7 +168,10 @@ async function updateSalleConsultation(req, res) {
       }
     );
     if (!existingSalleConsultation) {
-      return res.status(404).json({ message: "Salle consultation not found" });
+      return res.status(404).json({
+        success: false,
+        error: "Salle consultation not found",
+      });
     }
     const dataToUpdate = {};
     if (numero) dataToUpdate.numero = numero;
@@ -164,12 +180,16 @@ async function updateSalleConsultation(req, res) {
       where: { id },
       data: dataToUpdate,
     });
-    return res
-      .status(200)
-      .json({ message: "Salle consultation updated successfully" });
+    return res.status(200).json({
+      success: true,
+      message: "Salle consultation updated successfully",
+    });
   } catch (error) {
     console.error(error.message);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 
@@ -198,7 +218,7 @@ async function updateSalleConsultation(req, res) {
  *       404:
  *         description: Salle consultation not found
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  */
 async function deleteSalleConsultation(req, res) {
   const { id } = req.params;
@@ -209,15 +229,22 @@ async function deleteSalleConsultation(req, res) {
       }
     );
     if (!existingSalleConsultation) {
-      return res.status(404).json({ message: "Salle consultation not found" });
+      return res.status(404).json({
+        success: false,
+        error: "Salle consultation not found",
+      });
     }
     await prisma.salleConsultation.delete({ where: { id } });
-    return res
-      .status(200)
-      .json({ message: "Salle consultation deleted successfully" });
+    return res.status(200).json({
+      success: true,
+      message: "Salle consultation deleted successfully",
+    });
   } catch (error) {
     console.error(error.message);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 

@@ -45,22 +45,29 @@ const { formatDate } = require("../utils/dateFormatter");
  *       400:
  *         description: Bad request
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  *
  */
 async function addPatient(req, res) {
   const { nom, prenom, dateNaissance, adresse, telephone, email } = req.body;
   try {
     if (!validator.isEmail(email)) {
-      return res.status(400).json({ message: "Invalid email" });
+      return res.status(400).json({
+        success: false,
+        error: "Invalid email",
+      });
     }
     if (!nom || !prenom || !dateNaissance || !adresse || !telephone || !email) {
-      return res.status(400).json({ message: "All fields are required" });
+      return res.status(400).json({
+        success: false,
+        error: "All fields are required",
+      });
     }
     if (!validator.isDate(dateNaissance, { format: "YYYY-MM-DD" })) {
-      return res
-        .status(400)
-        .json({ message: "Invalid date, format must be yyyy-mm-dd" });
+      return res.status(400).json({
+        success: false,
+        error: "Invalid date, format must be yyyy-mm-dd",
+      });
     }
     const formattedDateNaissance = formatDate(dateNaissance);
     await prisma.patient.create({
@@ -73,10 +80,16 @@ async function addPatient(req, res) {
         email,
       },
     });
-    res.status(201).json({ message: "Patient created successfully" });
+    res.status(201).json({
+      success: true,
+      message: "Patient created successfully",
+    });
   } catch (error) {
     console.error(error.message);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 /**
@@ -100,7 +113,7 @@ async function addPatient(req, res) {
  *       200:
  *         description: List of patients
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  *
  */
 async function getAllPatients(req, res) {
@@ -110,10 +123,16 @@ async function getAllPatients(req, res) {
       skip: (page - 1) * limit,
       take: Number(limit) * 1,
     });
-    res.status(200).json(patients);
+    res.status(200).json({
+      success: true,
+      data: patients,
+    });
   } catch (error) {
     console.error(error.message);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 /**
@@ -143,13 +162,16 @@ async function getAllPatients(req, res) {
  *       404:
  *         description: Patient not found
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  *
  */
 async function getPatientById(req, res) {
   const { id } = req.params;
   if (!id) {
-    return res.status(400).json({ message: "Id is required" });
+    return res.status(400).json({
+      success: false,
+      error: "Id is required",
+    });
   }
   try {
     const patient = await prisma.patient.findUnique({
@@ -157,12 +179,21 @@ async function getPatientById(req, res) {
       include: { documents: true, factures: true, rendezVous: true },
     });
     if (!patient) {
-      return res.status(404).json({ message: "Patient not found" });
+      return res.status(404).json({
+        success: false,
+        error: "Patient not found",
+      });
     }
-    res.status(200).json(patient);
+    res.status(200).json({
+      success: true,
+      data: patient,
+    });
   } catch (error) {
     console.log(error.message);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 /**
@@ -192,20 +223,29 @@ async function getPatientById(req, res) {
  *       400:
  *         description: Bad request
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  *
  */
 async function deletePatient(req, res) {
   const { id } = req.params;
   if (!id) {
-    return res.status(400).json({ message: "Id is required" });
+    return res.status(400).json({
+      success: false,
+      error: "Id is required",
+    });
   }
   try {
     await prisma.patient.delete({ where: { id } });
-    res.status(200).json({ message: "Patient deleted successfully" });
+    res.status(200).json({
+      success: true,
+      message: "Patient deleted successfully",
+    });
   } catch (error) {
     console.error(error.message);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 /**
@@ -255,17 +295,23 @@ async function deletePatient(req, res) {
  *       400:
  *         description: Bad request
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  *
  */
 async function updatePatient(req, res) {
   const { id } = req.params;
   const { nom, prenom, dateNaissance, adresse, telephone, email } = req.body;
   if (!id) {
-    return res.status(400).json({ message: "Id is required" });
+    return res.status(400).json({
+      success: false,
+      error: "Id is required",
+    });
   }
   if (email && !validator.isEmail(email)) {
-    return res.status(400).json({ message: "Invalid email" });
+    return res.status(400).json({
+      success: false,
+      error: "Invalid email",
+    });
   }
 
   try {
@@ -273,14 +319,18 @@ async function updatePatient(req, res) {
       where: { id },
     });
     if (!existingPatient) {
-      return res.status(404).json({ message: "Patient not found" });
+      return res.status(404).json({
+        success: false,
+        error: "Patient not found",
+      });
     }
     let dataToUpdate = {};
     if (dateNaissance) {
       if (!validator.isDate(dateNaissance, { format: "YYYY-MM-DD" })) {
-        return res
-          .status(400)
-          .json({ message: "Invalid date, format must be yyyy-mm-dd" });
+        return res.status(400).json({
+          success: false,
+          error: "Invalid date, format must be yyyy-mm-dd",
+        });
       }
       const formattedDateNaissance = formatDate(dateNaissance);
       dataToUpdate.dateNaissance = formattedDateNaissance;
@@ -296,10 +346,16 @@ async function updatePatient(req, res) {
       where: { id },
       data: dataToUpdate,
     });
-    res.status(200).json({ message: "Patient updated successfully" });
+    res.status(200).json({
+      success: true,
+      message: "Patient updated successfully",
+    });
   } catch (error) {
     console.error(error.message);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 

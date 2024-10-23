@@ -1,0 +1,114 @@
+classDiagram
+    class Patient {
+        -id: int
+        -nom: string
+        -prenom: string
+        -dateNaissance: date
+        -adresse: string
+        -telephone: string
+        -email: string
+    }
+    
+    class Document {
+        -id: int
+        -type: string
+        -dateCreation: date
+        -fichier: blob
+        -description: string
+    }
+    class Facture {
+        -id: int
+        -date: date
+        -montant: float
+        -statut: string
+        -methodePaiement: string
+        -dateEcheance: date
+        -numeroFacture: string
+    }
+    
+    class Soin {
+        -id: int
+        -code: string
+        -description: string
+        -prix: float
+        -categorie: string
+    }
+    class FactureSoin {
+        -id: string
+        -factureId: string
+        -soinId: string
+        -montant: float
+    }
+    class Dent {
+        -id: int
+        -code: string
+        -position: string
+    }
+    class RendezVous {
+        -id: int
+        -startDateTime: datetime
+        -endDateTime: datetime
+        -statut: string
+        -motif: string
+        -notes: string
+    }
+    class SalleConsultation {
+        -id: int
+        -numero: string
+        -disponibilite: boolean
+    }
+    class Machine {
+        -id: int
+        -nom: string
+        -modele: string
+        -dateAchat: date
+        -dateDerniereRevision: date
+        -etat: string
+        -numeroSerie: string
+    }
+    class ProduitConsommable {
+        -id: int
+        -nom: string
+        -quantite: int
+        -seuil: int
+        -fournisseur: string
+        -prixUnitaire: float
+        -datePeremption: date
+    }
+    class Utilisateur {
+        -id: int
+        -nom: string
+        -prenom: string
+        -email: string
+        -motDePasse: string
+        -numeroTelephone: string
+    }
+    class Role {
+        -id: int
+        -nom: string
+    }
+    class SoinEffectue {
+        -id: int
+        -date: date
+        -commentaire: string
+    }
+
+ 
+    Patient "1" -- "*" RendezVous 
+    RendezVous "*" -- "1" Utilisateur
+    SoinEffectue "*" -- "1" RendezVous
+    
+    SoinEffectue "*" -- "1" Soin
+    Dent "1" -- "*" SoinEffectue
+
+    RendezVous "0..*" -- "1" SalleConsultation
+    SalleConsultation "*" -- "*" Machine : Machine_SalleConsultation
+
+    ProduitConsommable "*" -- "*" SoinEffectue : UsageProduit
+
+    Document "*" -- "1" Patient
+    Patient "1" -- "*" Facture
+    Facture "1" -- "*" FactureSoin
+    Soin "1" -- "*" FactureSoin
+
+    Utilisateur "*" -- "1..*" Role

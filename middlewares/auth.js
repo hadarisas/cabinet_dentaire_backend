@@ -6,14 +6,16 @@ const verifyToken = (req, res, next) => {
 
   if (!token) {
     return res.status(403).send({
-      message: "No token provided!",
+      success: false,
+      error: "No token provided!",
     });
   }
 
   jwt.verify(token, process.env.SECRET_KEY, (err, decoded) => {
     if (err) {
       return res.status(401).send({
-        message: "Unauthorized!",
+        success: false,
+        error: "Unauthorized!",
       });
     }
     req.userId = decoded.id;
@@ -34,10 +36,16 @@ const verifyRole = async (req, res, next, role) => {
     ) {
       next();
     } else {
-      res.status(403).send({ message: `${role} Required!` });
+      res.status(403).send({
+        success: false,
+        error: `${role} Required!`,
+      });
     }
   } catch (error) {
-    res.status(500).send({ message: error.message });
+    res.status(500).send({
+      success: false,
+      error: error.message,
+    });
   }
 };
 
@@ -58,7 +66,10 @@ const isDentistOrAssistant = (req, res, next) => {
       verifyRole(req, res, next, "ASSISTANT");
     });
   } else {
-    res.status(403).send({ message: "User ID not found!" });
+    res.status(403).send({
+      success: false,
+      error: "User ID not found!",
+    });
   }
 };
 

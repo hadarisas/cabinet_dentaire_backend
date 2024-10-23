@@ -53,7 +53,7 @@ const validator = require("validator");
  *       200:
  *         description: Rendez-vous added successfully
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  */
 
 async function addAppointment(req, res) {
@@ -77,24 +77,32 @@ async function addAppointment(req, res) {
     !motif ||
     !notes
   ) {
-    return res.status(400).json({ message: "All fields are required" });
+    return res.status(400).json({
+      success: false,
+      error: "All fields are required",
+    });
   }
   if (!validator.isDate(date, { format: "YYYY-MM-DD" })) {
-    return res
-      .status(400)
-      .json({ message: "Invalid date, format must be yyyy-mm-dd" });
+    return res.status(400).json({
+      success: false,
+      error: "Invalid date, format must be yyyy-mm-dd",
+    });
   }
 
   const [hours, minutes] = time.split(":");
   if (!hours || !minutes) {
-    return res
-      .status(400)
-      .json({ message: "Invalid time, format must be hh:mm" });
+    return res.status(400).json({
+      success: false,
+      error: "Invalid time, format must be hh:mm",
+    });
   }
   const dateAndTime = formatDateAndTime(date, time);
 
   if (dateAndTime < new Date().toISOString()) {
-    return res.status(400).json({ message: "Date cannot be in the past" });
+    return res.status(400).json({
+      success: false,
+      error: "Date cannot be in the past",
+    });
   }
   const endDate = new Date(dateAndTime);
   endDate.setMinutes(endDate.getMinutes() + duree);
@@ -124,7 +132,8 @@ async function addAppointment(req, res) {
 
     if (conflictingAppointments.length > 0) {
       return res.status(400).json({
-        message:
+        success: false,
+        error:
           "The dentist has a conflicting appointment during this time slot",
       });
     }
@@ -138,15 +147,19 @@ async function addAppointment(req, res) {
         utilisateurId,
         motif,
         notes,
-        status: "confirmed",
+        status: "CONFIRMED",
       },
     });
-    return res
-      .status(200)
-      .json({ message: "Appointment created successfully" });
+    return res.status(200).json({
+      success: true,
+      message: "Appointment created successfully",
+    });
   } catch (error) {
     console.error(error.message);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 
@@ -206,33 +219,41 @@ async function addAppointment(req, res) {
  *       404:
  *         description: Rendez-vous not found
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  */
 async function updateAppointment(req, res) {
   const { id } = req.params;
   if (!id) {
-    return res.status(400).json({ message: "ID is required" });
+    return res.status(400).json({
+      success: false,
+      error: "ID is required",
+    });
   }
   try {
     const existingAppointment = await prisma.rendezVous.findUnique({
       where: { id },
     });
     if (!existingAppointment) {
-      return res.status(404).json({ message: "Appointment not found" });
+      return res.status(404).json({
+        success: false,
+        error: "Appointment not found",
+      });
     }
     const dataToUpdate = {};
     let newStartDate, newEndDate;
     if (req.body.date && req.body.time) {
       if (!validator.isDate(req.body.date, { format: "YYYY-MM-DD" })) {
-        return res
-          .status(400)
-          .json({ message: "Invalid date, format must be yyyy-mm-dd" });
+        return res.status(400).json({
+          success: false,
+          error: "Invalid date, format must be yyyy-mm-dd",
+        });
       }
       const [hours, minutes] = req.body.time.split(":");
       if (!hours || !minutes) {
-        return res
-          .status(400)
-          .json({ message: "Invalid time, format must be hh:mm" });
+        return res.status(400).json({
+          success: false,
+          error: "Invalid time, format must be hh:mm",
+        });
       }
       newStartDate = formatDateAndTime(req.body.date, req.body.time);
       dataToUpdate.startDate = newStartDate;
@@ -282,18 +303,23 @@ async function updateAppointment(req, res) {
 
     if (conflictingAppointments.length > 0) {
       return res.status(400).json({
-        message:
+        success: false,
+        error:
           "The dentist has a conflicting appointment during this time slot",
       });
     }
 
     await prisma.rendezVous.update({ where: { id }, data: dataToUpdate });
-    return res
-      .status(200)
-      .json({ message: "Appointment updated successfully" });
+    return res.status(200).json({
+      success: true,
+      message: "Appointment updated successfully",
+    });
   } catch (error) {
     console.error(error.message);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 
@@ -325,28 +351,40 @@ async function updateAppointment(req, res) {
  *       404:
  *         description: Rendez-vous not found
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  */
 async function cancelAppointment(req, res) {
   const { id } = req.params;
   if (!id) {
-    return res.status(400).json({ message: "ID is required" });
+    return res.status(400).json({
+      success: false,
+      error: "ID is required",
+    });
   }
   try {
     const existingAppointment = await prisma.rendezVous.findUnique({
       where: { id },
     });
     if (!existingAppointment) {
-      return res.status(404).json({ message: "Appointment not found" });
+      return res.status(404).json({
+        success: false,
+        error: "Appointment not found",
+      });
     }
     await prisma.rendezVous.update({
       where: { id },
-      data: { status: "canceled" },
+      data: { status: "CANCELLED" },
     });
-    return res.status(200).json({ message: "Appointment cancelled" });
+    return res.status(200).json({
+      success: true,
+      message: "Appointment cancelled",
+    });
   } catch (error) {
     console.error(error.message);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 
@@ -394,19 +432,31 @@ async function cancelAppointment(req, res) {
  *       404:
  *         description: Rendez-vous not found
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  */
 async function getAppointmentsByPatientId(req, res) {
   const { patientId } = req.params;
   const { size = 10, page = 1 } = req.query;
   if (!patientId) {
-    return res.status(400).json({ message: "Patient ID is required" });
+    return res.status(400).json({
+      success: false,
+      error: "Patient ID is required",
+    });
   }
   //include the Dentist name in the response
 
   try {
+    const patient = await prisma.patient.findUnique({
+      where: { id: patientId },
+    });
+    if (!patient) {
+      return res.status(404).json({
+        success: false,
+        error: "Patient not found",
+      });
+    }
     const appointments = await prisma.rendezVous.findMany({
-      where: { patientId, status: "confirmed" },
+      where: { patientId, status: "CONFIRMED" },
       orderBy: { startDate: "desc" },
       skip: (page - 1) * size,
       take: Number(size) * 1,
@@ -444,10 +494,16 @@ async function getAppointmentsByPatientId(req, res) {
       notes: appointment.notes,
     }));
 
-    return res.status(200).json(response);
+    return res.status(200).json({
+      success: true,
+      data: response,
+    });
   } catch (error) {
     console.error(error.message);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 
@@ -495,18 +551,21 @@ async function getAppointmentsByPatientId(req, res) {
  *       404:
  *         description: Rendez-vous not found
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  */
 async function getAppoitmentsByUserId(req, res) {
   const { userId } = req.params;
   const { size = 10, page = 1 } = req.query;
   if (!userId) {
-    return res.status(400).json({ message: "User ID is required" });
+    return res.status(400).json({
+      success: false,
+      error: "User ID is required",
+    });
   }
   try {
     const appointments = await prisma.rendezVous.findMany({
       orderBy: { startDate: "desc" },
-      where: { utilisateurId: userId, status: "confirmed" },
+      where: { utilisateurId: userId, status: "CONFIRMED" },
       skip: (page - 1) * size,
       take: Number(size) * 1,
       include: {
@@ -542,10 +601,16 @@ async function getAppoitmentsByUserId(req, res) {
       motif: appointment.motif,
       notes: appointment.notes,
     }));
-    return res.status(200).json(response);
+    return res.status(200).json({
+      success: true,
+      data: response,
+    });
   } catch (error) {
     console.error(error.message);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 
@@ -577,12 +642,15 @@ async function getAppoitmentsByUserId(req, res) {
  *       404:
  *         description: Rendez-vous not found
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  */
 async function getAppointmentById(req, res) {
   const { id } = req.params;
   if (!id) {
-    return res.status(400).json({ message: "ID is required" });
+    return res.status(400).json({
+      success: false,
+      error: "ID is required",
+    });
   }
   try {
     const appointment = await prisma.rendezVous.findUnique({
@@ -620,10 +688,16 @@ async function getAppointmentById(req, res) {
       motif: appointment.motif,
       notes: appointment.notes,
     };
-    return res.status(200).json(response);
+    return res.status(200).json({
+      success: true,
+      data: response,
+    });
   } catch (error) {
     console.error(error.message);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 
@@ -665,7 +739,7 @@ async function getAppointmentById(req, res) {
  *       404:
  *         description: Rendez-vous not found
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  */
 async function getAllAppointments(req, res) {
   const { size = 10, page = 1 } = req.query;
@@ -708,10 +782,16 @@ async function getAllAppointments(req, res) {
       motif: appointment.motif,
       notes: appointment.notes,
     }));
-    return res.status(200).json(response);
+    return res.status(200).json({
+      success: true,
+      data: response,
+    });
   } catch (error) {
     console.error(error.message);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 
@@ -753,13 +833,13 @@ async function getAllAppointments(req, res) {
  *       404:
  *         description: Rendez-vous not found
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  */
 async function getAllActiveAppointments(req, res) {
   const { size = 10, page = 1 } = req.query;
   try {
     const appointments = await prisma.rendezVous.findMany({
-      where: { status: "confirmed" },
+      where: { status: "CONFIRMED" },
       skip: (page - 1) * size,
       take: Number(size),
       include: {
@@ -795,10 +875,16 @@ async function getAllActiveAppointments(req, res) {
       motif: appointment.motif,
       notes: appointment.notes,
     }));
-    return res.status(200).json(response);
+    return res.status(200).json({
+      success: true,
+      data: response,
+    });
   } catch (error) {
     console.error(error.message);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 

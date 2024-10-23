@@ -35,7 +35,7 @@ const prisma = require("../config/prisma");
  *       201:
  *         description: Dent created successfully
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  *       400:
  *         description: Bad request
  */
@@ -46,15 +46,21 @@ async function addDent(req, res) {
     if (!code || !position) {
       return res
         .status(400)
-        .json({ message: "Code and position are required" });
+        .json({ success: false, error: "Code and position are required" });
     }
     await prisma.dent.create({
       data: { code: code, position: position },
     });
-    res.status(201).json({ message: "Dent added successfully" });
+    res.status(201).json({
+      success: true,
+      message: "Dent added successfully",
+    });
   } catch (error) {
     console.log(error.message);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 
@@ -84,22 +90,31 @@ async function addDent(req, res) {
  *       404:
  *         description: Dent not found
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  */
 
 async function getDentById(req, res) {
   try {
     const { code } = req.params;
     if (!code) {
-      return res.status(400).json({ message: "Code is required" });
+      return res.status(400).json({
+        success: false,
+        error: "Code is required",
+      });
     }
     const dent = await prisma.dent.findUnique({
       where: { code: Number(code) },
     });
-    res.status(200).json(dent);
+    res.status(200).json({
+      success: true,
+      data: dent,
+    });
   } catch (error) {
     console.log(error.message);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 
@@ -139,7 +154,7 @@ async function getDentById(req, res) {
  *       404:
  *         description: Dent not found
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  *       400:
  *         description: Bad request
  */
@@ -147,20 +162,32 @@ async function updateDent(req, res) {
   try {
     const { code } = req.params;
     if (!code) {
-      return res.status(400).json({ message: "Code is required" });
+      return res.status(400).json({
+        success: false,
+        error: "Code is required",
+      });
     }
     const { position } = req.body;
     if (!position) {
-      return res.status(400).json({ message: "Position is required" });
+      return res.status(400).json({
+        success: false,
+        error: "Position is required",
+      });
     }
     await prisma.dent.update({
       where: { code: Number(code) },
       data: { position: position },
     });
-    res.status(200).json({ message: "Dent updated successfully" });
+    res.status(200).json({
+      success: true,
+      message: "Dent updated successfully",
+    });
   } catch (error) {
     console.log(error.message);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 
@@ -190,7 +217,7 @@ async function updateDent(req, res) {
  *       404:
  *         description: Dent not found
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  *       400:
  *         description: Bad request
  */
@@ -198,19 +225,31 @@ async function deleteDent(req, res) {
   try {
     const { code } = req.params;
     if (!code) {
-      return res.status(400).json({ message: "Code is required" });
+      return res.status(400).json({
+        success: false,
+        error: "Code is required",
+      });
     }
     const dent = await prisma.dent.findUnique({
       where: { code: Number(code) },
     });
     if (!dent) {
-      return res.status(404).json({ message: "Dent not found" });
+      return res.status(404).json({
+        success: false,
+        error: "Dent not found",
+      });
     }
     await prisma.dent.delete({ where: { code: Number(code) } });
-    res.status(200).json({ message: "Dent deleted successfully" });
+    res.status(200).json({
+      success: true,
+      message: "Dent deleted successfully",
+    });
   } catch (error) {
     console.log(error.message);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 
@@ -232,15 +271,21 @@ async function deleteDent(req, res) {
  *       200:
  *         description: Dents retrieved successfully
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  */
 async function getDents(req, res) {
   try {
     const dents = await prisma.dent.findMany();
-    res.status(200).json(dents);
+    res.status(200).json({
+      success: true,
+      data: dents,
+    });
   } catch (error) {
     console.log(error.message);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 

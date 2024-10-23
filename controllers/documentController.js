@@ -42,37 +42,48 @@ const { uploadFile, deleteFile } = require("../utils/files");
  *       400:
  *         description: Error when adding the document
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  *
  */
 async function addDocument(req, res) {
   const { type, description, patientId } = req.body;
 
   if (!type || !description || !patientId) {
-    return res
-      .status(400)
-      .json({ message: "type, description and patientId are required" });
+    return res.status(400).json({
+      success: false,
+      error: "type, description and patientId are required",
+    });
   }
 
   try {
     if (!req.file) {
-      return res.status(400).json({ message: "Upload failed" });
+      return res.status(400).json({
+        success: false,
+        error: "Upload failed",
+      });
     }
     const uploadResult = await uploadFile(req.file, patientId);
 
     if (!uploadResult.success) {
-      return res.status(400).json({ message: uploadResult.message });
+      return res.status(400).json({
+        success: false,
+        error: uploadResult.message,
+      });
     }
     console.log(`uploadResult.filePath: ${uploadResult.filePath}`);
     const document = await prisma.document.create({
       data: { type, description, patientId, fichier: uploadResult.filePath },
     });
-    return res
-      .status(200)
-      .json({ message: "Document added successfully", document });
+    return res.status(200).json({
+      success: true,
+      data: document,
+    });
   } catch (error) {
     console.error(error.message);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 
@@ -117,7 +128,7 @@ async function addDocument(req, res) {
  *       400:
  *         description: Error when updating the document
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  */
 async function updateDocument(req, res) {
   const { type, description, patientId } = req.body;
@@ -130,12 +141,18 @@ async function updateDocument(req, res) {
       where: { id: req.params.id },
     });
     if (!document) {
-      return res.status(404).json({ message: "Document not found" });
+      return res.status(404).json({
+        success: false,
+        error: "Document not found",
+      });
     }
     if (req.file) {
       const uploadResult = await uploadFile(req.file, patientId);
       if (!uploadResult.success) {
-        return res.status(400).json({ message: uploadResult.message });
+        return res.status(400).json({
+          success: false,
+          error: uploadResult.message,
+        });
       }
       dataToUpdate.fichier = uploadResult.filePath;
     }
@@ -143,12 +160,16 @@ async function updateDocument(req, res) {
       where: { id: req.params.id },
       data: dataToUpdate,
     });
-    return res
-      .status(200)
-      .json({ message: "Document updated successfully", updatedDocument });
+    return res.status(200).json({
+      success: true,
+      data: updatedDocument,
+    });
   } catch (error) {
     console.error(error.message);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 
@@ -174,13 +195,16 @@ async function updateDocument(req, res) {
  *       400:
  *         description: Document ID is required
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  */
 async function deleteDocument(req, res) {
   const { id } = req.params;
 
   if (!id) {
-    return res.status(400).json({ message: "Document ID is required" });
+    return res.status(400).json({
+      success: false,
+      error: "Document ID is required",
+    });
   }
   try {
     //delete file from storage
@@ -188,19 +212,31 @@ async function deleteDocument(req, res) {
       where: { id },
     });
     if (!document) {
-      return res.status(404).json({ message: "Document not found" });
+      return res.status(404).json({
+        success: false,
+        error: "Document not found",
+      });
     }
     const deleteFileResult = await deleteFile(document.fichier);
     if (!deleteFileResult.success) {
-      return res.status(400).json({ message: deleteFileResult.message });
+      return res.status(400).json({
+        success: false,
+        error: deleteFileResult.message,
+      });
     }
     await prisma.document.delete({
       where: { id },
     });
-    return res.status(200).json({ message: "Document deleted successfully" });
+    return res.status(200).json({
+      success: true,
+      message: "Document deleted successfully",
+    });
   } catch (error) {
     console.error(error.message);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 
@@ -226,7 +262,7 @@ async function deleteDocument(req, res) {
  *       404:
  *         description: Patient not found
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  */
 async function getDocuments(req, res) {
   const { patientId } = req.params;
@@ -236,7 +272,10 @@ async function getDocuments(req, res) {
       where: { id: patientId },
     });
     if (!patient) {
-      return res.status(404).json({ message: "Patient not found" });
+      return res.status(404).json({
+        success: false,
+        error: "Patient not found",
+      });
     }
     const documents = await prisma.document.findMany({
       where: { patientId },
@@ -244,10 +283,16 @@ async function getDocuments(req, res) {
       take: Number(limit) * 1,
     });
 
-    return res.status(200).json(documents);
+    return res.status(200).json({
+      success: true,
+      data: documents,
+    });
   } catch (error) {
     console.error(error.message);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 
@@ -273,25 +318,37 @@ async function getDocuments(req, res) {
  *       404:
  *         description: Document not found
  *       500:
- *         description: Internal server error
+ *         description: Bad Request
  */
 async function getDocumentById(req, res) {
   const { id } = req.params;
 
   if (!id) {
-    return res.status(400).json({ message: "Document ID is required" });
+    return res.status(400).json({
+      success: false,
+      error: "Document ID is required",
+    });
   }
   try {
     const document = await prisma.document.findUnique({
       where: { id },
     });
     if (!document) {
-      return res.status(404).json({ message: "Document not found" });
+      return res.status(404).json({
+        success: false,
+        error: "Document not found",
+      });
     }
-    return res.status(200).json(document);
+    return res.status(200).json({
+      success: true,
+      data: document,
+    });
   } catch (error) {
     console.error(error.message);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
   }
 }
 

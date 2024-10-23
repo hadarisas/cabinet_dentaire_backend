@@ -21,6 +21,14 @@ enum RoleEnum {
   ADMIN
   ASSISTANT
 }
+enum StatutEnum {
+  PAYE
+  EN_ATTENTE
+}
+enum AppointmentStatusEnum {
+  CONFIRMED
+  CANCELLED
+}
 
 model Role {
   id           String        @id @default(uuid())
@@ -37,6 +45,8 @@ model Utilisateur {
   numeroTelephone String
   roles      Role[]
   rendezVous RendezVous[]
+  //soinsEffectues SoinEffectue[]
+
   createdAt  DateTime       @default(now())
   updatedAt  DateTime       @updatedAt
 }
@@ -52,8 +62,22 @@ model Patient {
   factures       Facture[]
   rendezVous     RendezVous[]
   documents       Document[]
+  //soinsEffectues SoinEffectue[]
+
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
+}
+
+model Document {
+  id               String         @id @default(uuid())
+  type             String
+  dateCreation     DateTime       @default(now())
+  fichier          String
+  description      String
+  patient          Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patientId        String
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 }
 
 model Machine {
@@ -88,12 +112,11 @@ model SalleConsultation {
   createdAt  DateTime       @default(now())
   updatedAt  DateTime       @updatedAt
 }
-//Soins effectués necessite vérification
 model RendezVous {
   id                  String            @id @default(uuid())
   startDate           DateTime
   endDate             DateTime
-  status              String
+  status              AppointmentStatusEnum
   motif               String
   notes               String
   patient             Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
@@ -114,7 +137,6 @@ model Dent {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 }
-// AssignToSoin and RemoveFromSoin necessite vérification
 model ProduitConsommable {
   id       String                    @id @default(uuid())
   nom      String
@@ -127,18 +149,17 @@ model ProduitConsommable {
   updatedAt DateTime @updatedAt
 }
 
+model ProduitConsommable_Soin {
+  produitConsommable   ProduitConsommable @relation(fields: [produitConsommableId], references: [id], onDelete: Cascade)
+  produitConsommableId String
+  soinEffectue         SoinEffectue               @relation(fields: [soinEffectueId], references: [id], onDelete: Cascade)
+  soinEffectueId               String
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
 
-model Document {
-  id               String         @id @default(uuid())
-  type             String
-  dateCreation     DateTime       @default(now())
-  fichier          String
-  description      String
-  patient          Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  patientId        String
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
+  @@id([produitConsommableId, soinEffectueId])
 }
+
 
 model Soin {
   code           String @id @default(uuid())
@@ -146,7 +167,6 @@ model Soin {
   prix           Float
   categorie      String
   soinsEffectues SoinEffectue[]
-  produits       ProduitConsommable_Soin[]
   factureSoins   FactureSoin[]
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
@@ -154,15 +174,15 @@ model Soin {
 
 model Facture {
   id        String   @id @default(uuid())
+  numeroFacture String
   date      DateTime
   montant   Float
-  statut    String
+  statut    StatutEnum
   methodPaiement String
   dateEcheance DateTime
   patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
   patientId String
   factureSoins  FactureSoin[]
-  soinEffectues  SoinEffectue[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -180,7 +200,7 @@ model FactureSoin {
 
 model SoinEffectue {
   id               String         @id @default(uuid())
-  date             DateTime
+  date             DateTime 
   commentaire      String
   soin             Soin           @relation(fields: [soinId], references: [code], onDelete: Cascade)
   soinId           String
@@ -188,20 +208,14 @@ model SoinEffectue {
   dentId           Int
   rendezVous       RendezVous     @relation(fields: [rendezVousId], references: [id], onDelete: Cascade)
   rendezVousId     String
-  facture         Facture?        @relation(fields: [factureId], references: [id])
-  factureId       String?
+  produits       ProduitConsommable_Soin[]
+  //patient          Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  //patientId        String
+  //utilisateur      Utilisateur    @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  //utilisateurId    String
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 }
 
 
-model ProduitConsommable_Soin {
-  produitConsommable   ProduitConsommable @relation(fields: [produitConsommableId], references: [id], onDelete: Cascade)
-  produitConsommableId String
-  soin                 Soin               @relation(fields: [soinId], references: [code], onDelete: Cascade)
-  soinId               String
-  createdAt            DateTime       @default(now())
-  updatedAt            DateTime       @updatedAt
 
-  @@id([produitConsommableId, soinId])
-}
