@@ -29,9 +29,6 @@ const prisma = require("../config/prisma");
  *               soinId:
  *                 type: string
  *                 description: The id of the soin
- *               montant:
- *                 type: number
- *                 description: The montant of the facture soin
  *     responses:
  *       201:
  *         description: FactureSoin created successfully
@@ -45,14 +42,15 @@ const prisma = require("../config/prisma");
  */
 async function createFactureSoin(req, res) {
   try {
-    const { factureId, soinId, montant } = req.body;
+    const { factureId, soinId } = req.body;
 
-    if (!factureId || !soinId || !montant) {
+    if (!factureId || !soinId) {
       return res.status(400).json({
         success: false,
         error: "All fields are required",
       });
     }
+
     const facture = await prisma.facture.findUnique({
       where: { id: factureId },
     });
@@ -60,12 +58,6 @@ async function createFactureSoin(req, res) {
       return res.status(404).json({
         success: false,
         error: "Facture not found",
-      });
-    }
-    if (typeof montant !== "number" || montant <= 0) {
-      return res.status(400).json({
-        success: false,
-        error: "Montant must be a number greater than 0",
       });
     }
     const soin = await prisma.soin.findUnique({
@@ -82,11 +74,7 @@ async function createFactureSoin(req, res) {
       data: {
         factureId,
         soinId,
-        montant,
-      },
-      include: {
-        facture: true,
-        soin: true,
+        montant: soin.prix,
       },
     });
 
@@ -95,14 +83,21 @@ async function createFactureSoin(req, res) {
       where: { id: factureId },
       data: {
         montant: {
-          increment: montant,
+          increment: soin.prix,
         },
+      },
+    });
+    const factureSoin = await prisma.factureSoin.findUnique({
+      where: { id: newFactureSoin.id },
+      include: {
+        facture: true,
+        soin: true,
       },
     });
 
     res.status(201).json({
       success: true,
-      data: newFactureSoin,
+      data: factureSoin,
     });
   } catch (error) {
     console.error("Error creating factureSoin:", error);
@@ -239,7 +234,10 @@ async function updateFactureSoin(req, res) {
         error: "FactureSoin not found",
       });
     }
-
+    await prisma.soin.update({
+      where: { code: originalFactureSoin.soinId },
+      data: { prix: montant },
+    });
     const updatedFactureSoin = await prisma.$transaction(async (prisma) => {
       // Update the factureSoin
       const updated = await prisma.factureSoin.update({

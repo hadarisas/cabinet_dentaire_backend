@@ -408,12 +408,15 @@ async function getProduitById(req, res) {
  *               produitId:
  *                 type: string
  *                 description: ID of the produit to assign.
- *               soinEffectueId:
+ *               soinId:
  *                 type: string
- *                 description: ID of the soin effectue to assign the produit to.
+ *                 description: ID of the soin to assign the produit to.
+ *               quantite:
+ *                 type: number
+ *                 description: Quantity of the produit to assign.
  *     responses:
  *       200:
- *         description: Produit assigned to soin effectue successfully
+ *         description: Produit assigned to soin successfully
  *       400:
  *         description: Bad request
  *       404:
@@ -423,11 +426,17 @@ async function getProduitById(req, res) {
  */
 
 async function assignToTreatment(req, res) {
-  const { produitId, soinEffectueId } = req.body;
-  if (!produitId || !soinEffectueId) {
+  const { produitId, soinId, quantite } = req.body;
+  if (!produitId || !soinId || !quantite) {
     return res.status(400).json({
       success: false,
       error: "All fields are required",
+    });
+  }
+  if (typeof quantite !== "number" || quantite <= 0) {
+    return res.status(400).json({
+      success: false,
+      error: "Quantity must be a positive number",
     });
   }
   try {
@@ -440,24 +449,28 @@ async function assignToTreatment(req, res) {
         error: "Produit not found",
       });
     }
-    const soinEffectue = await prisma.soinEffectue.findUnique({
-      where: { id: soinEffectueId },
+    await prisma.produitConsommable.update({
+      where: { id: produitId },
+      data: { quantite: { decrement: quantite } },
     });
-    if (!soinEffectue) {
+    const soin = await prisma.soin.findUnique({
+      where: { code: soinId },
+    });
+    if (!soin) {
       return res.status(404).json({
         success: false,
-        error: "Soin effectue not found",
+        error: "Soin not found",
       });
     }
     await prisma.produitConsommable_Soin.create({
       data: {
         produitConsommable: { connect: { id: produitId } },
-        soinEffectue: { connect: { id: soinEffectueId } },
+        soin: { connect: { code: soinId } },
       },
     });
     return res.status(200).json({
       success: true,
-      message: "Produit assigned to soin effectue successfully",
+      message: "Produit assigned to soin successfully",
     });
   } catch (error) {
     console.log(error.message);
@@ -492,9 +505,12 @@ async function assignToTreatment(req, res) {
  *               produitId:
  *                 type: string
  *                 description: ID of the produit to remove.
- *               soinEffectueId:
+ *               soinId:
  *                 type: string
- *                 description: ID of the soin effectue to remove the produit from.
+ *                 description: ID of the soin to remove the produit from.
+ *               quantite:
+ *                 type: number
+ *                 description: Quantity of the produit to remove.
  *     responses:
  *       200:
  *         description: Produit removed from soin successfully
@@ -506,11 +522,17 @@ async function assignToTreatment(req, res) {
  *         description: Bad Request
  */
 async function removeFromTreatment(req, res) {
-  const { produitId, soinEffectueId } = req.body;
-  if (!produitId || !soinEffectueId) {
+  const { produitId, soinId, quantite } = req.body;
+  if (!produitId || !soinId || !quantite) {
     return res.status(400).json({
       success: false,
       error: "All fields are required",
+    });
+  }
+  if (typeof quantite !== "number" || quantite <= 0) {
+    return res.status(400).json({
+      success: false,
+      error: "Quantity must be a positive number",
     });
   }
   try {
@@ -518,7 +540,7 @@ async function removeFromTreatment(req, res) {
       where: {
         produitConsommableId_soinId: {
           produitConsommableId: produitId,
-          soinEffectueId: soinEffectueId,
+          soinId: soinId,
         },
       },
     });
@@ -528,17 +550,21 @@ async function removeFromTreatment(req, res) {
         error: "Association not found",
       });
     }
+    await prisma.produitConsommable.update({
+      where: { id: produitId },
+      data: { quantite: { increment: quantite } },
+    });
     await prisma.produitConsommable_Soin.delete({
       where: {
-        produitConsommableId_soinEffectueId: {
+        produitConsommableId_soinId: {
           produitConsommableId: produitId,
-          soinEffectueId: soinEffectueId,
+          soinId: soinId,
         },
       },
     });
     return res.status(200).json({
       success: true,
-      message: "Produit removed from soin effectue successfully",
+      message: "Produit removed from soin successfully",
     });
   } catch (error) {
     console.log(error.message);

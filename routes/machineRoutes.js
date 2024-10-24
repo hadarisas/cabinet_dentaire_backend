@@ -9,6 +9,7 @@ const {
   deleteMachine,
   getMachineById,
   assignMachineToSalle,
+  removeMachineFromSalle,
 } = require("../controllers/machineController");
 
 router.use(authJwt.verifyToken);
@@ -20,4 +21,5 @@ router.get("/:id", getMachineById);
 router.put("/:id", updateMachine);
 router.delete("/:id", deleteMachine);
 router.post("/assign-to-salle", assignMachineToSalle);
+router.post("/remove-from-salle", removeMachineFromSalle);
 module.exports = router;

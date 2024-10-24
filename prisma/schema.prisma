@@ -152,12 +152,12 @@ model ProduitConsommable {
 model ProduitConsommable_Soin {
   produitConsommable   ProduitConsommable @relation(fields: [produitConsommableId], references: [id], onDelete: Cascade)
   produitConsommableId String
-  soinEffectue         SoinEffectue               @relation(fields: [soinEffectueId], references: [id], onDelete: Cascade)
-  soinEffectueId               String
+  soin                 Soin               @relation(fields: [soinId], references: [code], onDelete: Cascade)
+  soinId               String
   createdAt            DateTime       @default(now())
   updatedAt            DateTime       @updatedAt
 
-  @@id([produitConsommableId, soinEffectueId])
+  @@id([produitConsommableId, soinId])
 }
 
 
@@ -168,6 +168,8 @@ model Soin {
   categorie      String
   soinsEffectues SoinEffectue[]
   factureSoins   FactureSoin[]
+  produits       ProduitConsommable_Soin[]
+
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 }
@@ -208,7 +210,6 @@ model SoinEffectue {
   dentId           Int
   rendezVous       RendezVous     @relation(fields: [rendezVousId], references: [id], onDelete: Cascade)
   rendezVousId     String
-  produits       ProduitConsommable_Soin[]
   //patient          Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
   //patientId        String
   //utilisateur      Utilisateur    @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)

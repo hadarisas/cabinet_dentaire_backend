@@ -13,9 +13,10 @@ const {
 router.use(authJwt.verifyToken);
 
 router.post("/", createFactureSoin);
+router.get("/summary", getFactureSoinsSummary);
+
 router.get("/:factureId", getFactureSoins);
 router.put("/:id", updateFactureSoin);
 router.delete("/:id", deleteFactureSoin);
-router.get("/summary", getFactureSoinsSummary);
 
 module.exports = router;

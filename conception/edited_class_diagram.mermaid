@@ -98,16 +98,16 @@ classDiagram
     RendezVous "*" -- "1" Utilisateur
     SoinEffectue "*" -- "1" RendezVous
     
-    SoinEffectue "*" -- "1" Soin
-    Dent "1" -- "*" SoinEffectue
+    Soin "1" -- "*" SoinEffectue
+    SoinEffectue "*" -- "1" Dent
 
     RendezVous "0..*" -- "1" SalleConsultation
     SalleConsultation "*" -- "*" Machine : Machine_SalleConsultation
 
-    ProduitConsommable "*" -- "*" SoinEffectue : UsageProduit
+    ProduitConsommable "*" -- "*" Soin : UsageProduit
 
     Document "*" -- "1" Patient
-    Patient "1" -- "*" Facture
+    Facture "*" -- "1" Patient
     Facture "1" -- "*" FactureSoin
     Soin "1" -- "*" FactureSoin
 

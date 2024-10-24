@@ -1,4 +1,6 @@
 const prisma = require("../config/prisma");
+const validator = require("validator");
+
 const {
   calculateTotalAmount,
   generateInvoiceNumber,
@@ -33,6 +35,7 @@ const { formatDate } = require("../utils/dateFormatter");
  *               dateEcheance:
  *                 type: string
  *                 description: The due date of the facture
+ *                 example: 2024-10-24
  *               factureSoins:
  *                 type: array
  *                 description: The facture soins
@@ -51,12 +54,6 @@ async function createFacture(req, res) {
   try {
     const { patientId, methodPaiement, dateEcheance, factureSoins } = req.body;
 
-    if (!factureSoins || factureSoins.length === 0) {
-      return res.status(400).json({
-        success: false,
-        error: "FactureSoins are required",
-      });
-    }
     if (!patientId || !methodPaiement || !dateEcheance) {
       return res.status(400).json({
         success: false,
@@ -95,12 +92,15 @@ async function createFacture(req, res) {
           methodPaiement,
           dateEcheance: formatteddateEcheance,
           patientId,
-          factureSoins: {
-            create: factureSoins.map((fs) => ({
-              soinId: fs.soinId,
-              montant: fs.montant,
-            })),
-          },
+          ...(factureSoins &&
+            factureSoins.length > 0 && {
+              factureSoins: {
+                create: factureSoins.map((fs) => ({
+                  soinId: fs.soinId,
+                  montant: fs.montant,
+                })),
+              },
+            }),
         },
         include: {
           factureSoins: true,
@@ -301,7 +301,8 @@ async function getFactureById(req, res) {
  *                 description: The method of payment
  *               dateEcheance:
  *                 type: string
- *                 description: The due date of the facture (format: yyyy-mm-dd)
+ *                 description: The due date of the facture
+ *                 example: 2024-10-24
  *               soins:
  *                 type: array
  *                 description: The soins of the facture
@@ -445,6 +446,11 @@ async function deleteFacture(req, res) {
  *   get:
  *     summary: Get factures en retard
  *     tags: [Factures]
+ *     parameters:
+ *       - in: header
+ *         name: x-access-token
+ *         type: string
+ *         description: The access token for authentication
  *     responses:
  *       200:
  *         description: Factures en retard fetched successfully
@@ -488,6 +494,69 @@ async function getFacturesEnRetard(req, res) {
   }
 }
 
+/**
+ *
+ * @swagger
+ * /api/v1/factures/mark-as-paid/{id}:
+ *   put:
+ *     summary: Mark a facture as paid
+ *     tags: [Factures]
+ *     parameters:
+ *       - in: header
+ *         name: x-access-token
+ *         type: string
+ *         description: The access token for authentication
+ *       - in: path
+ *         name: id
+ *         type: string
+ *         description: The id of the facture
+ *     responses:
+ *       200:
+ *         description: Facture marked as paid
+ *       500:
+ *         description: Bad Request
+ *       400:
+ *         description: Bad Request (Id is required)
+ *       404:
+ *         description: Facture not found
+ */
+async function markAsPaid(req, res) {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        error: "Id is required",
+      });
+    }
+
+    const facture = await prisma.facture.findUnique({
+      where: { id },
+    });
+    if (!facture) {
+      return res.status(404).json({
+        success: false,
+        error: "Facture not found",
+      });
+    }
+
+    await prisma.facture.update({
+      where: { id },
+      data: { statut: "PAYE" },
+    });
+    res.status(200).json({
+      success: true,
+      message: "Facture marked as paid",
+    });
+  } catch (error) {
+    console.error("Error marking facture as paid:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to mark facture as paid",
+    });
+  }
+}
+
 module.exports = {
   createFacture,
   getFactures,
@@ -495,4 +564,5 @@ module.exports = {
   updateFacture,
   deleteFacture,
   getFacturesEnRetard,
+  markAsPaid,
 };

@@ -1,7 +1,16 @@
 const prisma = require("../config/prisma");
 
 const calculateTotalAmount = (factureSoins) => {
-  return factureSoins.reduce((total, item) => total + item.montant, 0);
+  // Check if factureSoins is defined and is an array
+  if (!Array.isArray(factureSoins)) {
+    return 0; // Return 0 if factureSoins is not provided or not an array
+  }
+
+  // Calculate the total amount using reduce
+  return factureSoins.reduce((total, item) => {
+    // Ensure item.montant is a number before adding
+    return total + (item.montant || 0);
+  }, 0);
 };
 
 // Helper function to generate Facture number

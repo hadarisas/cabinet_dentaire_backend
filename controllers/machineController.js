@@ -157,9 +157,16 @@ async function getMachines(req, res) {
 async function getMachineById(req, res) {
   const { id } = req.params;
   try {
+    // Include the salles relation to get the salle number only
     const machine = await prisma.machine.findUnique({
       where: { id },
-      include: { salles: true },
+      include: {
+        salles: {
+          include: {
+            salleConsultation: true,
+          },
+        },
+      },
     });
     if (!machine) {
       return res.status(404).json({
@@ -167,9 +174,19 @@ async function getMachineById(req, res) {
         error: "Machine not found",
       });
     }
+    const salleNumbers = machine.salles.map(
+      (salle) => salle.salleConsultation.numero
+    );
     res.status(200).json({
       success: true,
-      data: machine,
+      data: {
+        id: machine.id,
+        nom: machine.nom,
+        modele: machine.modele,
+        dateAchat: machine.dateAchat,
+        dateDerniereRevision: machine.dateDerniereRevision,
+        salles: salleNumbers,
+      },
     });
   } catch (error) {
     console.log(error.message);
@@ -415,7 +432,6 @@ async function assignMachineToSalle(req, res) {
         error: "Salle not found",
       });
     }
-    console.log(`machineId: ${machineId}, salleId: ${salleId}`);
     await prisma.machine_SalleConsultation.create({
       data: {
         machine: { connect: { id: machineId } },
@@ -435,6 +451,89 @@ async function assignMachineToSalle(req, res) {
   }
 }
 
+/**
+ *
+ * @swagger
+ * /api/v1/machines/remove-from-salle:
+ *   post:
+ *     summary: Remove a machine from a Consultation Room
+ *     description: Remove a machine from a Consultation Room
+ *     tags: [Machines]
+ *     parameters:
+ *       - in: header
+ *         name: x-access-token
+ *         required: true
+ *         description: The access token for authentication
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               machineId:
+ *                 type: string
+ *               salleId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Machine removed from salle successfully
+ *       400:
+ *         description: Bad request
+ *       500:
+ *         description: Bad Request
+ */
+async function removeMachineFromSalle(req, res) {
+  const { machineId, salleId } = req.body;
+
+  if (!machineId || !salleId) {
+    return res.status(400).json({
+      success: false,
+      error: "Machine ID and salle ID are required",
+    });
+  }
+  try {
+    const existingMachine = await prisma.machine.findUnique({
+      where: { id: machineId },
+    });
+    if (!existingMachine) {
+      return res.status(404).json({
+        success: false,
+        error: "Machine not found",
+      });
+    }
+    const existingSalle = await prisma.salleConsultation.findUnique({
+      where: { id: salleId },
+    });
+    if (!existingSalle) {
+      return res.status(404).json({
+        success: false,
+        error: "Salle not found",
+      });
+    }
+    await prisma.machine_SalleConsultation.delete({
+      where: {
+        machineId_salleConsultationId: {
+          machineId,
+          salleConsultationId: salleId,
+        },
+      },
+    });
+    res.status(200).json({
+      success: true,
+      message: "Machine removed from salle successfully",
+    });
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
+  }
+}
+
 module.exports = {
   addMachine,
   getMachines,
@@ -442,4 +541,5 @@ module.exports = {
   deleteMachine,
   getMachineById,
   assignMachineToSalle,
+  removeMachineFromSalle,
 };

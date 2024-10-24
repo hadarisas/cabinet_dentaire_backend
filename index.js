@@ -34,7 +34,7 @@ app.use("/api/v1/documents", documentRoutes);
 app.use("/api/v1/soins", soinRoutes);
 app.use("/api/v1/soins-effectues", soinEffectueRoutes);
 app.use("/api/v1/factures", factureRoutes);
-app.use("/api/v1/factures-soin", factureSoinRoutes);
+app.use("/api/v1/facture-soins", factureSoinRoutes);
 
 app.get("/", (req, res) => {
   res.send(`Server running at port ${port}`);

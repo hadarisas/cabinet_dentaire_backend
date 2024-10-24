@@ -9,12 +9,14 @@ const {
   updateFacture,
   deleteFacture,
   getFacturesEnRetard,
+  markAsPaid,
 } = require("../controllers/factureController");
 
 router.use(authJwt.verifyToken);
 
 router.post("/", createFacture);
 router.get("/en-retard", getFacturesEnRetard);
+router.put("/mark-as-paid/:id", markAsPaid);
 router.get("/patient/:patientId", getFactures);
 router.get("/:id", getFactureById);
 router.put("/:id", updateFacture);

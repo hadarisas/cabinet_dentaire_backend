@@ -175,7 +175,9 @@ async function updateSalleConsultation(req, res) {
     }
     const dataToUpdate = {};
     if (numero) dataToUpdate.numero = numero;
-    if (disponibilite) dataToUpdate.disponibilite = disponibilite;
+
+    if (disponibilite !== undefined) dataToUpdate.disponibilite = disponibilite;
+
     await prisma.salleConsultation.update({
       where: { id },
       data: dataToUpdate,

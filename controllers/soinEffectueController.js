@@ -40,9 +40,6 @@ const validator = require("validator");
  *               rendezVousId:
  *                 type: string
  *                 description: The id of the rendez-vous
- *               factureId:
- *                 type: string
- *                 description: The id of the facture
  *     responses:
  *       201:
  *         description: SoinEffectue created successfully
@@ -51,8 +48,7 @@ const validator = require("validator");
  *
  */
 async function createSoinEffectue(req, res) {
-  const { date, commentaire, soinId, dentId, rendezVousId, factureId } =
-    req.body;
+  const { date, commentaire, soinId, dentId, rendezVousId } = req.body;
   try {
     if (!validator.isDate(date, { format: "YYYY-MM-DD" })) {
       return res.status(400).json({
@@ -75,7 +71,9 @@ async function createSoinEffectue(req, res) {
         error: "Soin not found",
       });
     }
-    const dent = await prisma.dent.findUnique({ where: { code: dentId } });
+    const dent = await prisma.dent.findUnique({
+      where: { code: Number(dentId) },
+    });
     if (!dent) {
       return res.status(404).json({
         success: false,
@@ -97,9 +95,8 @@ async function createSoinEffectue(req, res) {
         date: formatedDate,
         commentaire,
         soin: { connect: { code: soinId } },
-        dent: { connect: { code: dentId } },
+        dent: { connect: { code: Number(dentId) } },
         rendezVous: { connect: { id: rendezVousId } },
-        facture: factureId ? { connect: { id: factureId } } : undefined,
       },
     });
     res.status(201).json({
@@ -142,7 +139,6 @@ async function getAllSoinsEffectues(req, res) {
         soin: true,
         dent: true,
         rendezVous: true,
-        facture: true,
       },
     });
     res.status(200).json({
@@ -196,7 +192,6 @@ async function getSoinEffectueById(req, res) {
         soin: true,
         dent: true,
         rendezVous: true,
-        facture: true,
       },
     });
     if (!soinEffectue) {
@@ -256,9 +251,6 @@ async function getSoinEffectueById(req, res) {
  *               rendezVousId:
  *                 type: string
  *                 description: The id of the rendez-vous
- *               factureId:
- *                 type: string
- *                 description: The id of the facture
  *     responses:
  *       200:
  *         description: SoinEffectue updated successfully
@@ -268,8 +260,7 @@ async function getSoinEffectueById(req, res) {
  */
 async function updateSoinEffectue(req, res) {
   const { id } = req.params;
-  const { date, commentaire, soinId, dentId, rendezVousId, factureId } =
-    req.body;
+  const { date, commentaire, soinId, dentId, rendezVousId } = req.body;
   try {
     if (!id) {
       return res.status(400).json({
@@ -300,14 +291,16 @@ async function updateSoinEffectue(req, res) {
       dataToUpdate.soin = { connect: { code: soinId } };
     }
     if (dentId) {
-      const dent = await prisma.dent.findUnique({ where: { code: dentId } });
+      const dent = await prisma.dent.findUnique({
+        where: { code: Number(dentId) },
+      });
       if (!dent) {
         return res.status(404).json({
           success: false,
           error: "Dent not found",
         });
       }
-      dataToUpdate.dent = { connect: { code: dentId } };
+      dataToUpdate.dent = { connect: { code: Number(dentId) } };
     }
     if (rendezVousId) {
       const rendezVous = await prisma.rendezVous.findUnique({
@@ -320,18 +313,6 @@ async function updateSoinEffectue(req, res) {
         });
       }
       dataToUpdate.rendezVous = { connect: { id: rendezVousId } };
-    }
-    if (factureId) {
-      const facture = await prisma.facture.findUnique({
-        where: { id: factureId },
-      });
-      if (!facture) {
-        return res.status(404).json({
-          success: false,
-          error: "Facture not found",
-        });
-      }
-      dataToUpdate.facture = { connect: { id: factureId } };
     }
     const updatedSoinEffectue = await prisma.soinEffectue.update({
       where: { id },
@@ -447,7 +428,6 @@ async function getSoinsEffectuesByRendezVous(req, res) {
         soin: true,
         dent: true,
         rendezVous: { include: { patient: true } },
-        facture: true,
       },
     });
     res.status(200).json({
