@@ -43,6 +43,8 @@ model Utilisateur {
   email      String       @unique
   motDePasse String
   numeroTelephone String
+  statut         String
+  profilePicture String  
   roles      Role[]
   rendezVous RendezVous[]
   //soinsEffectues SoinEffectue[]

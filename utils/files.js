@@ -34,7 +34,7 @@ async function uploadFile(file, patientId) {
 
 async function deleteFile(filePath) {
   try {
-    const fullPath = path.join(__dirname, "../public", filePath);
+    const fullPath = path.join(__dirname, "../", filePath);
     await fs.promises.unlink(fullPath);
     return {
       success: true,
@@ -49,7 +49,36 @@ async function deleteFile(filePath) {
   }
 }
 
+async function uploadProfilePicture(file, userId) {
+  try {
+    const uploadDir = path.join(__dirname, "../public/uploads/profile");
+
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    const fileExtension = file.originalname.split(".").pop();
+    const fileName = `${userId}.${fileExtension}`;
+    const filePath = path.join(uploadDir, fileName);
+
+    // Write the file
+    await fs.promises.writeFile(filePath, file.buffer);
+
+    return {
+      success: true,
+      filePath: `/public/uploads/profile/${fileName}`,
+    };
+  } catch (error) {
+    console.error("File upload failed:", error);
+    return {
+      success: false,
+      error: error.message,
+    };
+  }
+}
+
 module.exports = {
   uploadFile,
   deleteFile,
+  uploadProfilePicture,
 };

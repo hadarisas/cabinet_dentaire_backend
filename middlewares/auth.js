@@ -42,10 +42,7 @@ const verifyRole = async (req, res, next, role) => {
       });
     }
   } catch (error) {
-    res.status(500).send({
-      success: false,
-      error: error.message,
-    });
+    res.status(500).send({ message: error.message });
   }
 };
 
@@ -66,10 +63,7 @@ const isDentistOrAssistant = (req, res, next) => {
       verifyRole(req, res, next, "ASSISTANT");
     });
   } else {
-    res.status(403).send({
-      success: false,
-      error: "User ID not found!",
-    });
+    res.status(403).send({ message: "User ID not found!" });
   }
 };
 

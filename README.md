@@ -65,7 +65,7 @@ npm run seed
 ## To Run the prisma studio to see the database data
 
 ```bash
-npm run studio
+npx prisma studio
 ```
 
 ## run the project in development mode:

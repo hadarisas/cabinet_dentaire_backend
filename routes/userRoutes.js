@@ -7,14 +7,27 @@ const {
   getUserById,
   updateUser,
   deleteUser,
+  updateUserStatus,
+  searchUsers,
 } = require("../controllers/userController");
 router.use(authJwt.verifyToken);
 router.use(authJwt.isAdmin);
 
-router.post("/add", addUser);
+const multer = require("multer");
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 15 * 1024 * 1024, // limit file size to 15MB
+  },
+});
+
+router.post("/add", upload.single("profilePicture"), addUser);
 router.get("/all", getAllUsers);
+router.put("/status/:id", updateUserStatus);
+router.get("/search", searchUsers);
 router.get("/:id", getUserById);
-router.put("/:id", updateUser);
+router.put("/:id", upload.single("profilePicture"), updateUser);
 router.delete("/:id", deleteUser);
 
 module.exports = router;

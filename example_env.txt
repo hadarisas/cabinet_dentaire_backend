@@ -14,3 +14,10 @@ ADMIN_PASSWORD="Admin_password"
 ADMIN_NOM="Admin_nom"
 ADMIN_PRENOM="Admin_prenom"
 ADMIN_PHONE_NUMBER = "00123456789"
+
+
+#Mail Configuration
+MAIL_HOST_ADDRESS ="host"
+MAIL_USERNAME="username"
+MAIL_PASSWORD="password"
+MAIL_SENDER_ADDRESS="sender@email.com"

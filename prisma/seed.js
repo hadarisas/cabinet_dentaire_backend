@@ -56,7 +56,7 @@ async function main() {
 
     // Create ADMIN user
     const hashedPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD, 10);
-    const adminRoles = ["ADMIN", "ASSISTANT"];
+    const adminRoles = ["ADMIN", "ASSISTANT", "DENTIST"];
 
     const user = await prisma.utilisateur.create({
       data: {
@@ -66,6 +66,7 @@ async function main() {
         numeroTelephone: process.env.ADMIN_PHONE_NUMBER,
         motDePasse: hashedPassword,
         roles: { connect: adminRoles.map((role) => ({ nom: role })) },
+        statut: "ACTIVE",
       },
       include: { roles: true },
     });

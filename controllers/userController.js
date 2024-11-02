@@ -2,6 +2,7 @@ const prisma = require("../config/prisma");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const validator = require("validator");
+const { uploadProfilePicture, deleteFile } = require("../utils/files");
 
 /**
  * @swagger
@@ -23,7 +24,7 @@ const validator = require("validator");
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
@@ -37,10 +38,14 @@ const validator = require("validator");
  *                 type: string
  *               motDePasse:
  *                 type: string
+ *               fichier:
+ *                 type: file
+ *                 description: The user profile image
  *               roles:
  *                 type: array
  *                 items:
  *                   type: string
+ *                 collectionFormat: array
  *     responses:
  *       201:
  *         description: User created successfully
@@ -51,7 +56,17 @@ const validator = require("validator");
  *
  */
 async function addUser(req, res) {
-  const { nom, prenom, email, numeroTelephone, motDePasse, roles } = req.body;
+  const userData = JSON.parse(req.body.data);
+
+  const {
+    nom,
+    prenom,
+    email,
+    numeroTelephone,
+    motDePasse,
+    roles,
+    statut = "ACTIVE",
+  } = userData;
 
   if (!nom || !prenom || !email || !numeroTelephone || !motDePasse || !roles) {
     return res.status(400).json({
@@ -64,6 +79,7 @@ async function addUser(req, res) {
     const existingUser = await prisma.utilisateur.findUnique({
       where: { email },
     });
+
     if (existingUser) {
       return res.status(400).json({
         success: false,
@@ -77,27 +93,53 @@ async function addUser(req, res) {
         error: "Invalid email",
       });
     }
+
     const hashedPassword = await bcrypt.hash(motDePasse, 10);
-    const user = await prisma.utilisateur.create({
-      data: {
-        nom,
-        prenom,
-        email,
-        motDePasse: hashedPassword,
-        numeroTelephone,
-        roles: { connect: roles.map((role) => ({ nom: role })) },
+
+    let userData = {
+      nom,
+      prenom,
+      email,
+      motDePasse: hashedPassword,
+      numeroTelephone,
+      statut,
+      roles: {
+        connect: roles.map((role) => ({ id: role })),
       },
+    };
+
+    const user = await prisma.utilisateur.create({
+      data: userData,
       include: { roles: true },
     });
+
+    if (req.file) {
+      const uploadResult = await uploadProfilePicture(req.file, user.id);
+
+      if (!uploadResult.success) {
+        return res.status(201).json({
+          success: true,
+          message:
+            "User created successfully but profile picture upload failed",
+          warning: uploadResult.error,
+        });
+      }
+
+      await prisma.utilisateur.update({
+        where: { id: user.id },
+        data: { profilePicture: uploadResult.filePath },
+      });
+    }
+
     res.status(201).json({
       success: true,
       message: "User created successfully",
     });
   } catch (error) {
-    console.error(error);
+    console.error("Error in addUser:", error);
     res.status(500).json({
       success: false,
-      error: "Bad Request",
+      error: "Internal Server Error",
     });
   }
 }
@@ -119,6 +161,22 @@ async function addUser(req, res) {
  *         description: The access token for authentication
  *         schema:
  *           type: string
+ *       - in: query
+ *         name: size
+ *         required: false
+ *         description: Number of rendez-vous to retrieve per page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           example: 10
+ *       - in: query
+ *         name: page
+ *         required: false
+ *         description: Page number to retrieve
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           example: 1
  *     responses:
  *       200:
  *         description: Users fetched successfully
@@ -132,15 +190,22 @@ async function getAllUsers(req, res) {
     const users = await prisma.utilisateur.findMany({
       skip: (page - 1) * limit,
       take: Number(limit) * 1,
+      include: { roles: true },
+      orderBy: { createdAt: "desc" },
     });
-    //send users without password
+    const totalUsers = await prisma.utilisateur.count();
+    const hasMore = page * limit < totalUsers;
+
     const usersWithoutPassword = users.map((user) => {
       const { motDePasse, ...userWithoutPassword } = user;
       return userWithoutPassword;
     });
+
     res.status(200).json({
       success: true,
       data: usersWithoutPassword,
+      hasMoreData: hasMore,
+      total: totalUsers,
     });
   } catch (error) {
     console.error(error);
@@ -192,7 +257,10 @@ async function getUserById(req, res) {
     });
   }
   try {
-    const user = await prisma.utilisateur.findUnique({ where: { id } });
+    const user = await prisma.utilisateur.findUnique({
+      where: { id },
+      include: { roles: true },
+    });
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -239,7 +307,7 @@ async function getUserById(req, res) {
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
@@ -257,6 +325,12 @@ async function getUserById(req, res) {
  *                 type: array
  *                 items:
  *                   type: string
+ *                 collectionFormat: array
+ *               statut:
+ *                 type: string
+ *               profilePicture:
+ *                 type: file
+ *                 description: The user profile image
  *     responses:
  *       200:
  *         description: User updated successfully
@@ -267,8 +341,17 @@ async function getUserById(req, res) {
  *
  */
 async function updateUser(req, res) {
+  const userData = JSON.parse(req.body.data);
   const { id } = req.params;
-  const { nom, prenom, email, motDePasse, numeroTelephone, roles } = req.body;
+  const {
+    nom,
+    prenom,
+    email,
+    numeroTelephone,
+    motDePasse,
+    roles,
+    statut = "ACTIVE",
+  } = userData;
   if (!id) {
     return res.status(400).json({
       success: false,
@@ -278,6 +361,7 @@ async function updateUser(req, res) {
   try {
     const existingUser = await prisma.utilisateur.findUnique({
       where: { id },
+      include: { roles: true },
     });
     if (!existingUser) {
       return res.status(404).json({
@@ -296,11 +380,61 @@ async function updateUser(req, res) {
       numeroTelephone: numeroTelephone
         ? numeroTelephone
         : existingUser.numeroTelephone,
+      statut: statut ? statut : existingUser.statut,
     };
+
     if (roles) {
-      dataToUpdate.roles = { set: [] };
-      dataToUpdate.roles = { connect: roles.map((role) => ({ nom: role })) };
+      const isRemovingAdminRole =
+        existingUser.roles.some((role) => role.nom === "ADMIN") &&
+        !roles.includes(
+          existingUser.roles.find((role) => role.nom === "ADMIN").id
+        );
+
+      if (isRemovingAdminRole) {
+        const adminCount = await prisma.utilisateur.count({
+          where: {
+            roles: {
+              some: {
+                nom: "ADMIN",
+              },
+            },
+          },
+        });
+        if (adminCount <= 1) {
+          return res.status(403).json({
+            success: false,
+            error: "Cannot remove the last admin user",
+          });
+        }
+      }
+      if (req.file) {
+        const uploadResult = await uploadProfilePicture(
+          req.file,
+          existingUser.id
+        );
+
+        if (!uploadResult.success) {
+          return res.status(201).json({
+            success: true,
+            message:
+              "User created successfully but profile picture upload failed",
+            warning: uploadResult.error,
+          });
+        }
+        dataToUpdate.profilePicture = uploadResult.filePath;
+      }
+
+      await prisma.utilisateur.update({
+        where: { id },
+        data: {
+          roles: {
+            disconnect: existingUser.roles.map((role) => ({ id: role.id })),
+          },
+        },
+      });
+      dataToUpdate.roles = { connect: roles.map((role) => ({ id: role })) };
     }
+
     const user = await prisma.utilisateur.update({
       where: { id },
       data: dataToUpdate,
@@ -362,11 +496,40 @@ async function deleteUser(req, res) {
   try {
     const existingUser = await prisma.utilisateur.findUnique({
       where: { id },
+      include: { roles: true },
     });
     if (!existingUser) {
       return res.status(404).json({
         success: false,
         error: "User not found",
+      });
+    }
+
+    if (
+      existingUser.roles &&
+      existingUser.roles.some((role) => role.nom === "ADMIN")
+    ) {
+      const adminCount = await prisma.utilisateur.count({
+        where: {
+          roles: {
+            some: {
+              nom: "ADMIN",
+            },
+          },
+        },
+      });
+      if (adminCount <= 1) {
+        return res.status(403).json({
+          success: false,
+          error: "Cannot delete the only admin user",
+        });
+      }
+    }
+    const deleteFileResult = await deleteFile(existingUser.profilePicture);
+    if (!deleteFileResult.success) {
+      return res.status(400).json({
+        success: false,
+        error: deleteFileResult.message,
       });
     }
     await prisma.utilisateur.delete({ where: { id } });
@@ -383,10 +546,169 @@ async function deleteUser(req, res) {
   }
 }
 
+/**
+ * @swagger
+ * tags:
+ *   name: Users
+ *   description: API endpoints for Users management
+ *
+ * /api/v1/users/status/{id}:
+ *   put:
+ *     summary: Update a user status by ID
+ *     tags: [Users]
+ *     parameters:
+ *       - in: header
+ *         name: x-access-token
+ *         required: true
+ *         description: The access token for authentication
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The ID of the user
+ *         schema:
+ *           type: string
+ *       - in: body
+ *         name: statut
+ *         required: true
+ *         description: The status of the user
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User status updated successfully
+ *       400:
+ *         description: Bad request
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Bad Request
+ *
+ */
+async function updateUserStatus(req, res) {
+  const { id } = req.params;
+  const { statut } = req.body;
+  if (!id || !statut) {
+    return res.status(400).json({
+      success: false,
+      error: "Id and statut are required",
+    });
+  }
+  try {
+    const existingUser = await prisma.utilisateur.findUnique({
+      where: { id },
+    });
+    if (!existingUser) {
+      return res.status(404).json({
+        success: false,
+        error: "User not found",
+      });
+    }
+    await prisma.utilisateur.update({ where: { id }, data: { statut } });
+    res.status(200).json({
+      success: true,
+      message: "User status updated successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
+  }
+}
+
+/**
+ * @swagger
+ * tags:
+ *   name: Users
+ *   description: API endpoints for Users management
+ *
+ * /api/v1/users/search:
+ *   get:
+ *     summary: Search users
+ *     tags: [Users]
+ *     parameters:
+ *       - in: header
+ *         name: x-access-token
+ *         required: true
+ *         description: The access token for authentication
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: query
+ *         required: true
+ *         description: The search query
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: page
+ *         required: false
+ *         description: Page number to retrieve
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           example: 1
+ *       - in: query
+ *         name: size
+ *         required: false
+ *         description: Number of users to retrieve per page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           example: 10
+ *     responses:
+ *       200:
+ *         description: Users fetched successfully
+ *       500:
+ *         description: Bad Request
+ *
+ */
+async function searchUsers(req, res) {
+  const { page = 1, limit = 10 } = req.query;
+  const { query } = req.query;
+  try {
+    const users = await prisma.utilisateur.findMany({
+      where: {
+        OR: [
+          { nom: { contains: query } },
+          { prenom: { contains: query } },
+          { email: { contains: query } },
+        ],
+      },
+      skip: (page - 1) * limit,
+      take: Number(limit) * 1,
+    });
+
+    const totalUsers = users.length;
+    const hasMore = page * limit < totalUsers;
+
+    const usersWithoutPassword = users.map((user) => {
+      const { motDePasse, ...userWithoutPassword } = user;
+      return userWithoutPassword;
+    });
+    res.status(200).json({
+      success: true,
+      data: usersWithoutPassword,
+      hasMoreData: hasMore,
+      total: totalUsers,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
+  }
+}
+
 module.exports = {
   addUser,
   getAllUsers,
   getUserById,
   updateUser,
   deleteUser,
+  updateUserStatus,
+  searchUsers,
 };

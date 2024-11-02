@@ -21,8 +21,10 @@ const bcrypt = require("bcrypt");
  *             properties:
  *               email:
  *                 type: string
+ *                 example: "hadarisas@gmail.com"
  *               password:
  *                 type: string
+ *                 example: "12345678"
  *     responses:
  *       200:
  *         description: Login successful
@@ -57,6 +59,12 @@ async function login(req, res) {
       return res.status(401).json({
         success: false,
         error: "Invalid password",
+      });
+    }
+    if (user.statut === "INACTIVE") {
+      return res.status(401).json({
+        success: false,
+        error: "User is inactive",
       });
     }
     const token = jwt.sign({ id: user.id }, process.env.SECRET_KEY, {
