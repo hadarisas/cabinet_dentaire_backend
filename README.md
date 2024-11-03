@@ -77,7 +77,7 @@ npm run dev
 ## For the API documentation, you can use the following link (if you use another port than 3000, replace it in the link):
 
 ```bash
-http://localhost:3000/api-docs
+http://localhost:3000/docs-api/
 ```
 
 ## The project is not finished yet, other features will be added in Coming days. so stay tuned!
