@@ -63,6 +63,7 @@ async function addPatient(req, res) {
         error: "All fields are required",
       });
     }
+
     if (!validator.isDate(dateNaissance, { format: "YYYY-MM-DD" })) {
       return res.status(400).json({
         success: false,
@@ -122,10 +123,15 @@ async function getAllPatients(req, res) {
     const patients = await prisma.patient.findMany({
       skip: (page - 1) * limit,
       take: Number(limit) * 1,
+      orderBy: { createdAt: "desc" },
     });
+    const totalPatients = await prisma.patient.count();
+    const hasMore = page * limit < totalPatients;
     res.status(200).json({
       success: true,
       data: patients,
+      hasMoreData: hasMore,
+      total: totalPatients,
     });
   } catch (error) {
     console.error(error.message);
@@ -358,6 +364,79 @@ async function updatePatient(req, res) {
     });
   }
 }
+/**
+ * @swagger
+ * tags:
+ *   name: Patients
+ *   description: API endpoints for managing patients
+ *
+ * /api/v1/patients/search:
+ *   get:
+ *     summary: Search patients
+ *     tags: [Patients]
+ *     parameters:
+ *       - in: header
+ *         name: x-access-token
+ *         required: true
+ *         description: The access token for authentication
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: query
+ *         required: true
+ *         description: The search query
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: page
+ *         required: false
+ *         description: The page number
+ *         schema:
+ *           type: number
+ *       - in: query
+ *         name: limit
+ *         required: false
+ *         description: The number of patients per page
+ *         schema:
+ *           type: number
+ *     responses:
+ *       200:
+ *         description: List of patients
+ *       500:
+ *         description: Bad Request
+ *
+ */
+async function searchPatients(req, res) {
+  const { query, page = 1, limit = 10 } = req.query;
+  try {
+    const patients = await prisma.patient.findMany({
+      where: {
+        OR: [
+          { nom: { contains: query } },
+          { prenom: { contains: query } },
+          { email: { contains: query } },
+        ],
+      },
+      skip: (page - 1) * limit,
+      take: Number(limit) * 1,
+      orderBy: { createdAt: "desc" },
+    });
+    const totalPatients = await prisma.patient.count();
+    const hasMore = page * limit < totalPatients;
+    res.status(200).json({
+      success: true,
+      data: patients,
+      hasMoreData: hasMore,
+      total: totalPatients,
+    });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
+  }
+}
 
 module.exports = {
   addPatient,
@@ -365,4 +444,5 @@ module.exports = {
   getPatientById,
   deletePatient,
   updatePatient,
+  searchPatients,
 };

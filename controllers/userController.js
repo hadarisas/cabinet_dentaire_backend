@@ -57,7 +57,6 @@ const { uploadProfilePicture, deleteFile } = require("../utils/files");
  */
 async function addUser(req, res) {
   const userData = JSON.parse(req.body.data);
-
   const {
     nom,
     prenom,
@@ -666,8 +665,7 @@ async function updateUserStatus(req, res) {
  *
  */
 async function searchUsers(req, res) {
-  const { page = 1, limit = 10 } = req.query;
-  const { query } = req.query;
+  const { query, page = 1, limit = 10 } = req.query;
   try {
     const users = await prisma.utilisateur.findMany({
       where: {
@@ -679,6 +677,7 @@ async function searchUsers(req, res) {
       },
       skip: (page - 1) * limit,
       take: Number(limit) * 1,
+      orderBy: { createdAt: "desc" },
     });
 
     const totalUsers = users.length;

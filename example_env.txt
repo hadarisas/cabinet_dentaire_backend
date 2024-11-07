@@ -21,3 +21,4 @@ MAIL_HOST_ADDRESS ="host"
 MAIL_USERNAME="username"
 MAIL_PASSWORD="password"
 MAIL_SENDER_ADDRESS="sender@email.com"
+

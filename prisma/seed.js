@@ -67,6 +67,7 @@ async function main() {
         motDePasse: hashedPassword,
         roles: { connect: adminRoles.map((role) => ({ nom: role })) },
         statut: "ACTIVE",
+        profilePicture: "/public/uploads/profile/user-avatar.png",
       },
       include: { roles: true },
     });

@@ -44,7 +44,7 @@ model Utilisateur {
   motDePasse String
   numeroTelephone String
   statut         String
-  profilePicture String  
+  profilePicture String?  
   roles      Role[]
   rendezVous RendezVous[]
   //soinsEffectues SoinEffectue[]
