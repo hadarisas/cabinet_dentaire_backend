@@ -13,6 +13,8 @@ const {
 } = require("../controllers/factureController");
 
 router.use(authJwt.verifyToken);
+//if you want to authenticate the token with the cookie
+//router.use(authJwt.authenticateToken);
 
 router.post("/", createFacture);
 router.get("/en-retard", getFacturesEnRetard);

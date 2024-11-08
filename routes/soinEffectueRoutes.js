@@ -11,6 +11,8 @@ const {
 } = require("../controllers/soinEffectueController");
 
 router.use(authJwt.verifyToken);
+//if you want to authenticate the token with the cookie
+//router.use(authJwt.authenticateToken);
 
 router.post("/", createSoinEffectue);
 router.get("/", getAllSoinsEffectues);

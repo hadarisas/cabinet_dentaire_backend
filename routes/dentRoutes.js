@@ -10,6 +10,8 @@ const {
 } = require("../controllers/dentController");
 
 router.use(authJwt.verifyToken);
+//if you want to authenticate the token with the cookie
+//router.use(authJwt.authenticateToken);
 
 router.post("/", addDent);
 router.get("/", getDents);

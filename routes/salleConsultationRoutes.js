@@ -9,6 +9,9 @@ const {
 } = require("../controllers/salleConsultationController");
 
 router.use(authJwt.verifyToken);
+//if you want to authenticate the token with the cookie
+//router.use(authJwt.authenticateToken);
+
 router.post("/", addSalleConsultation);
 router.get("/", getSallesConsultation);
 router.put("/:id", updateSalleConsultation);

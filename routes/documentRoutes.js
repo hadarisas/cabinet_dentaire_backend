@@ -19,6 +19,8 @@ const upload = multer({
 });
 
 router.use(authJwt.verifyToken);
+//if you want to authenticate the token with the cookie
+//router.use(authJwt.authenticateToken);
 
 router.post("/", upload.single("fichier"), addDocument);
 router.get("/patient/:patientId", getDocuments);

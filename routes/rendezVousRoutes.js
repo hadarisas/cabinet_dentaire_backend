@@ -14,6 +14,8 @@ const {
 } = require("../controllers/rendezVousController");
 
 router.use(authJwt.verifyToken);
+//if you want to authenticate the token with the cookie
+//router.use(authJwt.authenticateToken);
 
 router.post("/", addAppointment);
 router.get("/active", getAllActiveAppointments);
