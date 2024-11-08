@@ -25,6 +25,5 @@ MAIL_USERNAME="username"
 MAIL_PASSWORD="password"
 MAIL_SENDER_ADDRESS="sender@email.com"
 
-#If you want to use the cookie instead of the token you need to comment `router.use(authJwt.verifyToken);` in the routes files and uncomment `router.use(authJwt.authenticateToken);`
 
 

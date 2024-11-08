@@ -77,7 +77,15 @@ npm run dev
 ## For the API documentation, you can use the following link (if you use another port than 3000, replace it in the link):
 
 ```bash
-http://localhost:3000/docs-api/
+http://localhost:3000/docs-api
 ```
+
+### If you want to use the cookie instead of the token you need to comment
+
+`router.use(authJwt.verifyToken);`
+
+in the routes files and uncomment
+
+`router.use(authJwt.authenticateToken);`
 
 ## The project is not finished yet, other features will be added in Coming days. so stay tuned!
