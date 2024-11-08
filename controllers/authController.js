@@ -35,6 +35,7 @@ const bcrypt = require("bcrypt");
  *
  */
 
+//Send a cookie with the token
 async function login(req, res) {
   const { email, password } = req.body;
   if (!email || !password) {
@@ -70,6 +71,13 @@ async function login(req, res) {
     const token = jwt.sign({ id: user.id }, process.env.SECRET_KEY, {
       expiresIn: "24h",
     });
+    res.cookie("jwt", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 24 * 60 * 60 * 1000,
+      path: "/",
+      signed: true,
+    });
     const roles = user.roles ? user.roles.map((role) => role.nom) : [];
     const dataToSend = {
       message: "Login successful",
@@ -81,6 +89,7 @@ async function login(req, res) {
       email: user.email,
       numeroTelephone: user.numeroTelephone,
     };
+
     res.status(200).json({
       success: true,
       data: dataToSend,

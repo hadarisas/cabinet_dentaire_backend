@@ -575,6 +575,63 @@ async function removeFromTreatment(req, res) {
   }
 }
 
+/**
+ * @swagger
+ * /api/v1/produits/search:
+ *   get:
+ *     summary: Search produits
+ *     description: Search produits by name
+ *     tags: [Produits]
+ *     parameters:
+ *       - in: query
+ *         name: query
+ *         required: true
+ *         description: The search query
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: page
+ *         required: false
+ *         description: The page number
+ *         schema:
+ *           type: number
+ *       - in: query
+ *         name: limit
+ *         required: false
+ *         description: The number of produits per page
+ *         schema:
+ *           type: number
+ *     responses:
+ *       200:
+ *         description: List of produits
+ *       500:
+ *         description: Bad Request
+ */
+async function searchProduits(req, res) {
+  const { query, page = 1, limit = 10 } = req.query;
+  try {
+    const produits = await prisma.produitConsommable.findMany({
+      where: { nom: { contains: query } },
+      skip: (page - 1) * limit,
+      take: Number(limit) * 1,
+      orderBy: { createdAt: "desc" },
+    });
+    const totalProduits = await prisma.produitConsommable.count();
+    const hasMore = page * limit < totalProduits;
+    return res.status(200).json({
+      success: true,
+      data: produits,
+      hasMoreData: hasMore,
+      total: totalProduits,
+    });
+  } catch (error) {
+    console.log(error.message);
+    return res.status(500).json({
+      success: false,
+      error: "Bad Request",
+    });
+  }
+}
 module.exports = {
   addProduit,
   updateProduit,
@@ -583,4 +640,5 @@ module.exports = {
   getProduitById,
   assignToTreatment,
   removeFromTreatment,
+  searchProduits,
 };

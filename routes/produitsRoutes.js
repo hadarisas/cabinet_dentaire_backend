@@ -16,10 +16,10 @@ router.use(authJwt.verifyToken);
 
 router.post("/", addProduit);
 router.get("/", getAllProduits);
+router.post("/assign-to-treatment", assignToTreatment);
+router.post("/remove-from-treatment", removeFromTreatment);
 router.get("/:id", getProduitById);
 router.put("/:id", updateProduit);
 router.delete("/:id", deleteProduit);
-router.post("/assign-to-treatment", assignToTreatment);
-router.post("/remove-from-treatment", removeFromTreatment);
 
 module.exports = router;
