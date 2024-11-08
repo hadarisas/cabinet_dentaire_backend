@@ -3,13 +3,14 @@ const cors = require("cors");
 const routes = require("./routes/index");
 const setupSwagger = require("./swagger");
 const path = require("path");
-
+const cookieParser = require("cookie-parser");
 const app = express();
 setupSwagger(app);
 
 const port = process.env.PORT || 3000;
 
 app.use(express.json());
+app.use(cookieParser(process.env.COOKIE_SECRET));
 
 const corsOptions = {
   origin: "*",

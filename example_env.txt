@@ -8,6 +8,9 @@ DATABASE_URL="postgresql://johndoe:randompassword@localhost:5432/cabinet_db?sche
 #JTW Secret Key
 SECRET_KEY="Your_secret_key"
 
+#Cookie Secret
+COOKIE_SECRET="hadarisas-cookie-secret"
+
 #ADMIN USER CREATION
 ADMIN_EMAIL="Admin@email"
 ADMIN_PASSWORD="Admin_password"
