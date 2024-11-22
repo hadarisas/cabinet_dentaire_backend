@@ -21,7 +21,7 @@ const bcrypt = require("bcrypt");
  *             properties:
  *               email:
  *                 type: string
- *                 example: "hadarisas@gmail.com"
+ *                 example: "sas@gmail.com"
  *               password:
  *                 type: string
  *                 example: "12345678"
@@ -72,13 +72,19 @@ async function login(req, res) {
       expiresIn: "24h",
     });
 
-    res.cookie("jwt", token, {
+    const cookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 24 * 60 * 60 * 1000,
+      secure: true,
       path: "/",
       signed: true,
-    });
+      //sameSite: "Lax",
+      sameSite: "None",
+      partitioned: true,
+      domain: process.env.COOKIE_DOMAIN || undefined,
+    };
+
+    res.cookie("jwt", token, cookieOptions);
+
     const roles = user.roles ? user.roles.map((role) => role.nom) : [];
     const dataToSend = {
       message: "Login successful",

@@ -1,3 +1,5 @@
+#NODE ENVIRONMENT
+NODE_ENV=development
 
 #Server Port
 PORT=3000
@@ -9,7 +11,10 @@ DATABASE_URL="postgresql://johndoe:randompassword@localhost:5432/cabinet_db?sche
 SECRET_KEY="Your_secret_key"
 
 #Cookie Secret
-COOKIE_SECRET="hadarisas-cookie-secret"
+COOKIE_SECRET="exemple-cookie-secret"
+
+#Cookie Domain
+COOKIE_DOMAIN="exemple.com"
 
 #ADMIN USER CREATION
 ADMIN_EMAIL="Admin@email"
