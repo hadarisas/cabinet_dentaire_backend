@@ -106,6 +106,12 @@ async function login(req, res) {
   }
 }
 
+async function logout(req, res) {
+  res.clearCookie("jwt");
+  res.status(200).json({ success: true, message: "Logout successful" });
+}
+
 module.exports = {
   login,
+  logout,
 };
