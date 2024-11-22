@@ -69,7 +69,6 @@ const isDentistOrAssistant = (req, res, next) => {
 
 const authenticateToken = (req, res, next) => {
   const token = req.signedCookies.jwt;
-
   if (!token) {
     return res.status(401).json({
       success: false,
@@ -80,6 +79,8 @@ const authenticateToken = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.SECRET_KEY);
     req.user = { id: decoded.id };
+    req.userId = decoded.id; // Set req.userId here
+
     next();
   } catch (error) {
     return res.status(403).json({

@@ -10,9 +10,9 @@ const {
   searchPatients,
 } = require("../controllers/patientController");
 
-router.use(authJwt.verifyToken);
+//router.use(authJwt.verifyToken);
 //if you want to authenticate the token with the cookie
-//router.use(authJwt.authenticateToken);
+router.use(authJwt.authenticateToken);
 
 router.post("/add", authJwt.isDentistOrAssistant, addPatient);
 router.get("/all", authJwt.isDentistOrAssistant, getAllPatients);

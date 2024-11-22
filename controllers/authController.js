@@ -83,12 +83,14 @@ async function login(req, res) {
     const dataToSend = {
       message: "Login successful",
       id: user.id,
-      token: token,
+      //token: token,
       roles: roles,
       nom: user.nom,
       prenom: user.prenom,
       email: user.email,
       numeroTelephone: user.numeroTelephone,
+      statut: user.statut,
+      profilePicture: user.profilePicture,
     };
 
     res.status(200).json({

@@ -414,9 +414,8 @@ async function updateUser(req, res) {
 
         if (!uploadResult.success) {
           return res.status(201).json({
-            success: true,
-            message:
-              "User created successfully but profile picture upload failed",
+            success: false,
+            message: "Failed to update profile picture",
             warning: uploadResult.error,
           });
         }
@@ -439,9 +438,25 @@ async function updateUser(req, res) {
       data: dataToUpdate,
       include: { roles: true },
     });
+
+    const userRoles = user.roles ? user.roles.map((role) => role.nom) : [];
+    const dataToSend = {
+      message: "Login successful",
+      id: user.id,
+      //token: token,
+      roles: userRoles,
+      nom: user.nom,
+      prenom: user.prenom,
+      email: user.email,
+      numeroTelephone: user.numeroTelephone,
+      statut: user.statut,
+      profilePicture: user.profilePicture,
+    };
+
     res.status(200).json({
       success: true,
       message: "User updated successfully",
+      data: dataToSend,
     });
   } catch (error) {
     console.error(error);

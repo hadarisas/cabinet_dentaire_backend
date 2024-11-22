@@ -10,9 +10,9 @@ const {
   getFactureSoinsSummary,
 } = require("../controllers/factureSoinController");
 
-router.use(authJwt.verifyToken);
+//router.use(authJwt.verifyToken);
 //if you want to authenticate the token with the cookie
-//router.use(authJwt.authenticateToken);
+router.use(authJwt.authenticateToken);
 
 router.post("/", createFactureSoin);
 router.get("/summary", getFactureSoinsSummary);
