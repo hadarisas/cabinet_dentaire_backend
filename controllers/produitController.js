@@ -311,9 +311,14 @@ async function getAllProduits(req, res) {
       skip: (page - 1) * limit,
       take: Number(limit) * 1,
     });
+    const totalProduits = await prisma.produitConsommable.count();
+    const hasMore = page * limit < totalProduits;
+
     return res.status(200).json({
       success: true,
       data: produits,
+      hasMoreData: hasMore,
+      total: totalProduits,
     });
   } catch (error) {
     console.log(error.message);

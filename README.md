@@ -68,6 +68,65 @@ npm run seed
 npx prisma studio
 ```
 
+## Create a self-signed certificate for https
+
+### For MacOS:
+
+```bash
+# Install Homebrew if you don't have it
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# Install mkcert
+brew install mkcert
+
+# Install nss (for Firefox)
+brew install nss
+
+# Create and install the local CA
+mkcert -install
+
+# Create certificates for localhost
+mkcert localhost 127.0.0.1 ::1
+```
+
+### For Windows:
+
+```bash
+# Using chocolatey
+choco install mkcert
+
+# Or using scoop
+scoop bucket add extras
+scoop install mkcert
+```
+
+### For Linux:
+
+```bash
+# Ubuntu/Debian
+sudo apt install libnss3-tools
+sudo apt install mkcert
+
+# Or download the binary directly
+curl -JLO "https://dl.filippo.io/mkcert/latest?for=linux/amd64"
+chmod +x mkcert-v*-linux-amd64
+sudo cp mkcert-v*-linux-amd64 /usr/local/bin/mkcert
+```
+
+### After that you can create the certificates with the following command:
+
+```bash
+# Create and install the local CA
+mkcert -install
+
+# Create certificates for localhost
+mkcert localhost 127.0.0.1 ::1
+```
+
+### This will generate two files: localhost+2.pem (the certificate) and localhost+2-key.pem (the private key)
+
+### Move these files to your project directory and update your
+
 ## run the project in development mode:
 
 ```bash
